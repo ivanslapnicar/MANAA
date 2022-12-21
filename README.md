@@ -6,6 +6,9 @@ This repository contains software which accompanies and enhances research and pu
 
 Notebooks are written in [Julia](https://julialang.org) using [Pluto.jl](https://github.com/fonsp/Pluto.jl).
 
+## Contents
+
+* [Fast.jl](https://github.com/ivanslapnicar/MANAA/) and [Fast.jl.html](https://ivanslapnicar.github.io/MANAA/Fast.jl.html) - files accompanying and enhancing the paper: Nevena Jakovčević Stor and Ivan Slapničar, _Fast multiplication, determinants, and inverses of arrowhead and diagonal-plus-rank-one matrices over associative fields_, submitted.
 
 ## Cloning the repository
 
@@ -19,7 +22,7 @@ The repository is now located in the directory  `MANAA`. The notebooks are locat
 
 ## Running the notebooks on `binder`
 
-Choose the `.html` version of the notebook. In the botebook, 
+Choose the above link to `.html` version of the notebook. In the botebook, 
 press `Edit or run this notebook` button and choose `binder`. This will read all the necessary packages and start the notebook (within several minutes).
 
 ## Running notebooks on your computer
