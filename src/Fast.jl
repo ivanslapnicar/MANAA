@@ -154,7 +154,7 @@ end
 # ╔═╡ 349ba8df-0f34-4c81-a152-5d4c771faecb
 # ╠═╡ show_logs = false
 md"""
-# Fast multiplication, eigenvectors, determinants, and inverses of arrowhead and diagonal-plus-rank-one matrices
+# Fast multiplication, determinants, and inverses of arrowhead and diagonal-plus-rank-one matrices over associative fields
 
 #### by Nevena Jakovčević Stor and Ivan Slapničar
 
