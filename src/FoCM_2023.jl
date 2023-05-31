@@ -1040,11 +1040,11 @@ function RQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) where
 	normalize!(y)
     steps=1
     while norm(A*y-y*ν)>tol && steps<3000
-        normalize!(y)
 		x=y
 		ν=(x'*x)\(x'*(A*x))
 		μ=real(ν)
         y=inv(A-μ*I(n))*x
+		normalize!(y)
         # println(ν)
         steps+=1
     end
@@ -1063,7 +1063,7 @@ function MRQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) wher
 	# Right eigenvalue and eigenvector of a (quaternion) Arrow matrix 
 	# using Modified Rayleigh Quotient Iteration
 	n=size(A,1)
-	x=normalize!(randn(T,n))
+	x=normalize!(ones(T,n))
 	# Only real shifts
     ν=(transpose(x)*x)\(transpose(x)*(A*x))
 	μ=real(ν)
@@ -1071,11 +1071,11 @@ function MRQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) wher
 	normalize!(y)
     steps=1
     while norm(A*y-y*ν)>tol && steps<3000
-        normalize!(y)
 		x=y
 		ν=(transpose(x)*x)\(transpose(x)*(A*x))
 		μ=real(ν)
         y=inv(A-μ*I(n))*x
+		normalize!(y)
         # println(ν)
         steps+=1
     end
@@ -1166,7 +1166,7 @@ md"
 begin
 	T=QuaternionF64
 	# T=ComplexF64
-	n=8
+	n=10
 	Esolver=MRQI
 	# Esolver=Power
 	# Esolver=RQI
