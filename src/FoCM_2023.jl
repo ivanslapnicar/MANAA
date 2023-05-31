@@ -1,18 +1,8 @@
 ### A Pluto.jl notebook ###
-# v0.19.20
+# v0.19.22
 
 using Markdown
 using InteractiveUtils
-
-# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
-macro bind(def, element)
-    quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
-        local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
-        el
-    end
-end
 
 # ╔═╡ ba49a550-fe54-11ed-1d8b-9b5192874bc6
 using LinearAlgebra, Random, PlutoUI, Quaternions, GenericLinearAlgebra
@@ -245,7 +235,7 @@ Let $A=\operatorname{Arrow}(D,u,v,\alpha)$. Then
 
 $$
 \begin{aligned}
-w_j&=d_jz_j+u_jz_i, \quad i=1,2,\cdots,i-1\\
+w_j&=d_jz_j+u_jz_i, \quad j=1,2,\cdots,i-1\\
 % y_i&=\sum_{j=1}^{i-1}\bar v_j x_j+\alpha x_i +\sum_{j=i}^{n-1}\bar v_j x_{j+1}\\
 w_i&=v_{1:i-1}^* z_{1:i-1} +\alpha z_i + v_{i:n-1}^* z_{i+1:n} \\
 w_j&=u_{j-1}z_i+d_{j-1}z_j,\quad j=i+1,i+2,\cdots,n.
@@ -273,7 +263,7 @@ Let $P$ be the permutation matrix of the permutation $p=(1,2,\cdots,i-1,n,i,i+1,
 If all $d_j\neq 0$, the inverse of $A$ is a DPRk (DPR1) matrix
 
 $$
-A^{-1} =\Delta+x \rho y^⋆,$$
+A^{-1} =\Delta+x \rho y^*,$$
 
 where 
 
@@ -294,7 +284,7 @@ v=\begin{bmatrix} v_1 \\ v_j \\v_2\end{bmatrix}.$$
 Then 
 
 $$
-A^{-1}=P\begin{bmatrix} \hat D & \hat u\\ \hat v^\star & \hat \alpha \end{bmatrix}P^T,
+A^{-1}=P\begin{bmatrix} \hat D & \hat u\\ \hat v^* & \hat \alpha \end{bmatrix}P^T,
 $$
 
 where
@@ -335,7 +325,7 @@ y=\begin{bmatrix} y_1 \\ y_j \\y_2\end{bmatrix}.$$
 Then, 
 
 $$
-A^{-1}=P\begin{bmatrix} D & u \\ v^T & \alpha \end{bmatrix}P^T,$$
+A^{-1}=P\begin{bmatrix} D & u \\ v^* & \alpha \end{bmatrix}P^T,$$
 
 where
 
@@ -580,15 +570,15 @@ $$\gamma=\nu\lambda\frac{1}{\nu}. \tag{8}$$
 md"
 ### Algorithm
 
-In the first (forward) pass, in each step the absolutely largest eigenvalue and its eigenvector are computed by the power method. The first element of the current vector $x$ and the the first and the last elements of the current eigenvector are stored. The current value $\gamma$ is computed using (18) and stored. The deflation is then performed according to Lemma 4.
+In the first (forward) pass, in each step the absolutely largest eigenvalue and its eigenvector are computed by the power method. The first element of the current vector $x$ and the the first and the last elements of the current eigenvector are stored. The current value $\gamma$ is computed using (8) and stored. The deflation is then performed according to Lemma 4.
 
 The eigenvectors are reconstructed bottom-up, that is from the smallest matrix to the original one (a backward pass). In each iteration we need to have the access to the first element of the vector $x$ which was used to define the current Arrow matrix, its absolutely largest eigenvalue, and the first and the last elements of the corresponding eigenvector.
 
 In the $i$th step, for each $j=i+1,\ldots, n$ the following steps are performed:
 
-1. The equation (17) is solved for $\zeta$ (the first element of the eigenvector of the larger matrix). The quantity $\hat \xi$ is the last element of the eigenvectors and was stored in the forward pass. 
+1. The equation (7) is solved for $\zeta$ (the first element of the eigenvector of the larger matrix). The quantity $\hat \xi$ is the last element of the eigenvectors and was stored in the forward pass. 
 2. The first element of eigenvector of super-matrix is updated (set to $\zeta$).
-3. The last element of the eigenvectors of the super matrix is updated using (14). 
+3. The last element of the eigenvectors of the super matrix is updated using (4). 
 
 Iterations are completed in $O(n^2)$ operations.  
 
@@ -1042,16 +1032,19 @@ function RQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) where
 	# Right eigenvalue and eigenvector of a (quaternion) Arrow matrix 
 	# using Rayleigh Quotient Iteration
 	n=size(A,1)
-	x=normalize!(randn(T,n))
+	x=normalize!(ones(T,n))
 	# Only real shifts
-    ν=(x'*x)\(x⋅(A*x))
-	y=inv(A-real(ν)*I(n))*x
+    ν=(x'*x)\(x'*(A*x))
+	μ=real(ν)
+	y=inv(A-μ*I(n))*x
+	normalize!(y)
     steps=1
     while norm(A*y-y*ν)>tol && steps<3000
         normalize!(y)
 		x=y
-		ν=(x'*x)\(x⋅(A*x))
-        y=inv(A-real(ν)*I(n))*x
+		ν=(x'*x)\(x'*(A*x))
+		μ=real(ν)
+        y=inv(A-μ*I(n))*x
         # println(ν)
         steps+=1
     end
@@ -1073,13 +1066,16 @@ function MRQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) wher
 	x=normalize!(randn(T,n))
 	# Only real shifts
     ν=(transpose(x)*x)\(transpose(x)*(A*x))
-	y=inv(A-real(ν)*I(n))*x
+	μ=real(ν)
+	y=inv(A-μ*I(n))*x
+	normalize!(y)
     steps=1
     while norm(A*y-y*ν)>tol && steps<3000
         normalize!(y)
 		x=y
 		ν=(transpose(x)*x)\(transpose(x)*(A*x))
-        y=inv(A-real(ν)*I(n))*x
+		μ=real(ν)
+        y=inv(A-μ*I(n))*x
         # println(ν)
         steps+=1
     end
@@ -1166,24 +1162,15 @@ md"
 ## Examples
 "
 
-# ╔═╡ 4848ec1f-6b22-4d97-9083-fbc76067b3aa
-md"""
-T = $(@bind Tp Select(["Float64", "ComplexF64", "QuaternionF64"], default="QuaternionF64"))+
-"""
-
-# ╔═╡ 04114bf2-f9a0-432a-9012-ce5090f998e1
-n = @bind n Slider(5:20, default=6,show_value=true)
-
-# ╔═╡ 8c39d9ce-2597-4b52-b547-69b15cf3e989
-md"""
-Esolver = $(@bind Esolverp Select(["Power", "RQI", "MRQI"], default="Power"))
-"""
-
-# ╔═╡ c3fd7c4e-850d-4164-9af2-9b177fdb7dcc
-T=eval(Meta.parse(Tp))
-
-# ╔═╡ 21401daf-2a95-46ce-b62f-1a06888a6a4b
-Esolver=eval(Meta.parse(Esolverp))
+# ╔═╡ c7252627-e9ca-4087-abdf-dfa4161013d8
+begin
+	T=QuaternionF64
+	# T=ComplexF64
+	n=8
+	Esolver=MRQI
+	# Esolver=Power
+	# Esolver=RQI
+end
 
 # ╔═╡ 720abc22-e9ec-48c4-a543-c83fd850b56e
 begin
@@ -1413,9 +1400,6 @@ Matrix(A)
 
 # ╔═╡ 9e42901c-6700-46b6-bda8-4edfd92c17fd
 Matrix(B)
-
-# ╔═╡ 61f239da-d9aa-4806-9b76-066eb2ca9329
-MRQI(A)
 
 # ╔═╡ ad608357-03db-46a6-a8f8-86f7a2feec7c
 Esolver
@@ -1791,16 +1775,11 @@ version = "17.4.0+0"
 # ╟─7e6dcca5-e545-4822-8e49-634514fd60bb
 # ╠═e5ab4bf6-4d90-4dd5-9dc6-82adb68ce753
 # ╟─aefbdfff-3cb2-41a4-89be-67915bfb240b
-# ╟─4848ec1f-6b22-4d97-9083-fbc76067b3aa
-# ╠═04114bf2-f9a0-432a-9012-ce5090f998e1
-# ╟─8c39d9ce-2597-4b52-b547-69b15cf3e989
-# ╠═c3fd7c4e-850d-4164-9af2-9b177fdb7dcc
-# ╠═21401daf-2a95-46ce-b62f-1a06888a6a4b
+# ╠═c7252627-e9ca-4087-abdf-dfa4161013d8
 # ╠═780548c4-f550-40eb-b075-193f3276096c
 # ╠═de95310d-ee54-4357-a5d3-ddb69e331f9e
 # ╠═11e3e179-cc1e-4f98-855b-09b4b858e475
 # ╠═9e42901c-6700-46b6-bda8-4edfd92c17fd
-# ╠═61f239da-d9aa-4806-9b76-066eb2ca9329
 # ╠═ad608357-03db-46a6-a8f8-86f7a2feec7c
 # ╠═4afebe6d-1ae1-47e0-9b60-f4f4429c4ce6
 # ╠═ca7a2021-818f-40ef-a81d-19814af94654
