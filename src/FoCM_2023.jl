@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.22
+# v0.19.20
 
 using Markdown
 using InteractiveUtils
@@ -172,15 +172,16 @@ $$\operatorname{real}(p)=\operatorname{real}(q)\quad \textrm{and}\quad
 The __standard form__ of the quaternion $q$ is the (unique) similar quaternion $q_s$:
 
 $$
-q_s=x^{-1} qx =a_1 + \hat a_2\,  \mathbf{i},\quad \|x\|=1,\quad \hat a_2 \geq 0,$$
+q_s=x^{-1} qx =a + \hat b\,  \mathbf{i},\quad \|x\|=1,\quad \hat b \geq 0,$$
 
 where $x$ is computed as follows:
 
-> if $a_3=a_4=0$, then $x=1$, 
+> if $c=d=0$, then $x=1$,
 
-> if $a_2<0$, then $x=-\mathbf{j}$, ortherwise,
+> if $b<0$, then $x=-\mathbf{j}$, ortherwise,
 
-> if $a_3^2+a_4^2>0$, then $x=\hat x/\|\hat x\|$, where $\hat x=\| \operatorname{imag}(q)\|+a_2-a_4\,\mathbf{j}+a_3\,\mathbf{k}$.
+> if $c^2+d^2>0$, then $x=\hat x/\|\hat x\|$, where $\hat x=\| \operatorname{imag}(q)\|+b-d\,\mathbf{j}+c\,\mathbf{k}$.
+
 
 ## Homomorphism 
 
@@ -343,7 +344,7 @@ v= \begin{bmatrix}-\Delta_1^{-\star}y_1 \\ -\Delta_2^{-\star}y_2\end{bmatrix}y_j
 md"
 # Eigenvalue decomposition
 
-Right eigenpairs $(λ,x)$ satisfy
+Right eigenpairs $(λ,x)$ of a quaternionic matrix satisfy
 
 $$
 Ax=xλ, \quad x\neq 0.$$
@@ -366,9 +367,9 @@ The power method produces a sequence of vectors
 $$
 y_k=Ax_k, \quad x_{k+1}=\frac{y_k}{\| y_k\|},\quad k=0,1,2,\ldots$$
 
-If $\lambda$ is a dominant eigenvalue, and $x_0$ has a component in the direction of its eigenvector $x$, then $y_k\to x$ and $x^*Ax=\lambda$. The convergence is linear.
+If $\lambda$ is a dominant eigenvalue, and $x_0$ has a component in the direction of its unit eigenvector $x$, then $x_k\to x$ and $x^*Ax=\lambda$. The convergence is linear.
 
-> Due to fast matrix × vector multiplication, one step of the method requires $O(n)$ operations.  
+> If $A$ is an arrowhead or a DPRk matrix, then, due to fast matrix × vector multiplication, one step of the method requires $O(n)$ operations.  
 "
 
 # ╔═╡ f6769f8f-19ad-47c5-a1ec-2e3c780f6cd7
@@ -378,14 +379,12 @@ md"
 The __Rayleigh Quotient Iteration__ (RQI) produces sequences of shifts and vectors
 
 $$
-\mu_k=\frac{1}{x^*x} x^*Ax,\quad y_k=(A-\mu_kI)^{-1} x_k, \quad  x_{k+1}=\frac{y_k}{\| y_k\|},\quad k=0,1,2,\ldots$$
+\mu_k=\frac{1}{x_k^*x_k} x_k^*Ax_k,\quad y_k=(A-\mu_kI)^{-1} x_k, \quad  x_{k+1}=\frac{y_k}{\| y_k\|},\quad k=0,1,2,\ldots$$
 
 The __Modified Rayleigh Quotient Iteration__ (MRQI) produces sequences of shifts and vectors
 
 $$
 \mu_k=\frac{1}{x^Tx} x^TAx,\quad y_k=(A-\mu_kI)^{-1} x_k, \quad  x_{k+1}=\frac{y_k}{\| y_k\|},\quad k=0,1,2,\ldots$$
-
-> Due to fast inverses, one step of the methods requires $O(n)$ operations.
 
 Since the eigenvalues are not shift invariant, only real shifts can be used. However, this works fine due to the following: let the matrix $A -\mu I$ have purely imaginary standard eigenvalue:
 
@@ -394,6 +393,8 @@ $$(A-\mu I)x=x (i λ),\qquad \mu,\lambda\in\mathbb{R}.$$
 Then 
 
 $$Ax=\mu x+xi\lambda=x(\mu+i\lambda).$$
+
+> If $A$ is an arrowhead or a DPRk matrix, then, due to fast inverses, one step of the methods requires $O(n)$ operations.
 "
 
 # ╔═╡ 22c35821-40f4-4c64-90b3-2ea2ce4e651c
@@ -546,10 +547,9 @@ $$
 If $\lambda$ and $\psi$ are known, then the other components of the eigenvector are solutions of scalar Sylvester equations
 
 $$
-\begin{aligned}
-\delta \nu -\nu \lambda & = -\chi \psi,\qquad\qquad\qquad\qquad (6)\\
-\Delta_{ii}u_i-u_i\lambda & =-x_i\psi,\quad i=1,\ldots,n-2.
-\end{aligned}$$
+\delta \nu -\nu \lambda = -\chi \psi,\tag{6}$$
+
+$$\Delta_{ii}u_i-u_i\lambda =-x_i\psi,\quad i=1,\ldots,n-2.$$
 
 By setting
 
@@ -561,7 +561,7 @@ the Sylvester equation (5) becomes
 $$
 \gamma\zeta-\zeta \mu=-\chi\hat \xi. \tag{7}$$
 
-Dividing (16) by $\nu$ from the right gives
+Dividing (6) by $\nu$ from the right gives
 
 $$\gamma=\nu\lambda\frac{1}{\nu}. \tag{8}$$
 "
@@ -570,7 +570,7 @@ $$\gamma=\nu\lambda\frac{1}{\nu}. \tag{8}$$
 md"
 ### Algorithm
 
-In the first (forward) pass, in each step the absolutely largest eigenvalue and its eigenvector are computed by the power method. The first element of the current vector $x$ and the the first and the last elements of the current eigenvector are stored. The current value $\gamma$ is computed using (8) and stored. The deflation is then performed according to Lemma 4.
+In the first (forward) pass, in each step the absolutely largest eigenvalue and its eigenvector are computed by the power method. The first element of the current vector $x$ and the the first and the last elements of the current eigenvector are stored. The current value $\gamma$ is computed using (8) and stored. The deflation is then performed according to Lemma 1.
 
 The eigenvectors are reconstructed bottom-up, that is from the smallest matrix to the original one (a backward pass). In each iteration we need to have the access to the first element of the vector $x$ which was used to define the current Arrow matrix, its absolutely largest eigenvalue, and the first and the last elements of the corresponding eigenvector.
 
@@ -584,7 +584,7 @@ Iterations are completed in $O(n^2)$ operations.
 
 After all iterations are completed, we have:
 
-* the absolutely largest eigenvalue and its eigenvector (unchanged from the first run of the Power Method), 
+* the absolutely largest eigenvalue and its eigenvector (unchanged from the first run of the chosen eigensolver), 
 * all other eigenvalues and the last elements of their corresponding eigenvectors.  
 
 The rest of the elements of the remaining eigenvectors are computed using the procedure described at the beginning of the previous section. This step also requires $O(n^2)$ operations.
@@ -653,7 +653,7 @@ $$
 
 
 
-__Proof:__ If $\mu$ is an eigenvalue of $\hat A$, it is obviously also an eigenvalue of $\tilde A$, and then also of $A$. Assume that the corresponding eigenvector of $A$ is partitioned as $\displaystyle\begin{bmatrix}\zeta \\ z\end{bmatrix}$. By combining (1) and (3) and the previous results, it must hold
+__Proof:__ If $\mu$ is an eigenvalue of $\hat A$, it is obviously also an eigenvalue of $\tilde A$, and then also of $A$. Assume that the corresponding eigenvector of $A$ is partitioned as $\displaystyle\begin{bmatrix}\zeta \\ z\end{bmatrix}$. By combining (9) and (11) and the previous results, it must hold
 
 $$
 \begin{bmatrix} 0 & 0^T \\ w & \hat A\end{bmatrix} \begin{bmatrix} 0 & 0^T\\ -u\frac{1}{\nu} & I \end{bmatrix}\begin{bmatrix} \zeta \\ z\end{bmatrix}
@@ -792,7 +792,7 @@ The eigenvectors are reconstructed bottom-up, that is from the smallest $2\times
 
 In the $i$th step, for each $j=i+1,\ldots, n$, the following steps are performed:
 
-1. The value $\alpha$ is computed from (15).
+1. The value $\alpha$ is computed from (16).
 2. The equation (12), which now reads $\gamma\zeta-\zeta \mu=-\chi \alpha$ is solved for $\zeta$ (the first element of the eigenvector of the larger matrix).
 3. First element of eigenvector of super-matrix is updated (set to $\zeta$).
 
@@ -800,25 +800,10 @@ Iterations are completed in $O(n^2)$ operations.
 
 After all iterations are completed, we have:
 
-* the absolutely largest eigenvalue and its eigenvector (unchanged from the first run of the Power Method), 
+* the first computed eigenvalue and its eigenvector (unchanged from the first run of the eigensolver of choice), 
 * all other eigenvalues and the first elements of their corresponding eigenvectors.  
 
 The rest of the elements of the remaining eigenvectors are computed using the procedure described at the beginning of the section. This step also requires $O(n^2)$ operations. 
-
-By setting
-
-$$
-\gamma=\delta+\chi\psi\frac{1}{\nu}$$
-
-the Sylvester equation (15) becomes
-
-$$
-\gamma\zeta-\zeta \mu=-\chi\hat \xi. \tag{17}$$
-
-Dividing (16) by $\nu$ from the right gives
-
-$$\gamma=\nu\lambda\frac{1}{\nu}. \tag{18}$$
-
 "
 
 # ╔═╡ e747a6e4-70df-4aff-993a-e9a9ad51fa03
@@ -1166,7 +1151,7 @@ md"
 begin
 	T=QuaternionF64
 	# T=ComplexF64
-	n=10
+	n=8
 	Esolver=MRQI
 	# Esolver=Power
 	# Esolver=RQI
@@ -1279,8 +1264,7 @@ begin
 		ψ[n]=z
 	
 		# Compute the eigenvectors, bottom-up, the formulas are derived 
-		# using (15) and known first and last elements of eigenvectors
-			
+		# using (4) and known first and last elements of eigenvectors
 		for i=n-1:-1:1
 			for j=i+1:n
 				ζ=sylvester(γ[i],-λ[j],χ[i]*ψ[j])
@@ -1288,7 +1272,7 @@ begin
 				ψ[j]=ψ[j]+ψ[i]*(ν[i]\ ζ)
 			end
 		end
-			
+
 		U=eigvecs(A₀,λ,ψ)
 		return Eigen(λ,U)
 	end
@@ -1299,7 +1283,7 @@ begin
 		A=A₀
 		n=size(A,1)
 		k=size(A.x,2)
-		# Create arrays for eigenvalues, first element and eigenvectors
+		# Create arrays for eigenvalues, first elements and eigenvectors
 		λ=Vector{T}(undef,n)
 		γ=Vector{T}(undef,n)
 		# First and second elements of A.x
@@ -1339,7 +1323,7 @@ begin
 		end
 
 		# Compute the eigenvectors, bottom-up, the formulas are derived 
-		# using (3) and known first elements
+		# using (14) and known first elements
 		for i=n-1:-1:1
 			for j=i+1:n
 				if length(u₁[j])==k
@@ -1405,7 +1389,10 @@ Matrix(B)
 Esolver
 
 # ╔═╡ 4afebe6d-1ae1-47e0-9b60-f4f4429c4ce6
-Esolver(A)
+ll,yy=Esolver(A)
+
+# ╔═╡ 1d775cf0-79f7-4e3d-926e-6e7d719c0094
+norm(A*yy-yy*ll)
 
 # ╔═╡ ca7a2021-818f-40ef-a81d-19814af94654
 eigvals(A)
@@ -1782,6 +1769,7 @@ version = "17.4.0+0"
 # ╠═9e42901c-6700-46b6-bda8-4edfd92c17fd
 # ╠═ad608357-03db-46a6-a8f8-86f7a2feec7c
 # ╠═4afebe6d-1ae1-47e0-9b60-f4f4429c4ce6
+# ╠═1d775cf0-79f7-4e3d-926e-6e7d719c0094
 # ╠═ca7a2021-818f-40ef-a81d-19814af94654
 # ╠═86010eb7-60e7-4373-8dbe-39ab63c81f73
 # ╠═c805f4b8-906e-4da5-90ad-001013704b1c
