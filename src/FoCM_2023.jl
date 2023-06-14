@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.20
+# v0.19.22
 
 using Markdown
 using InteractiveUtils
@@ -218,7 +218,7 @@ A=\Delta+x ρy^*$$
 
 where 
 
-$$\mathop{\mathrm{diag}}(\Delta)\in \mathbb{F}^{n},\quad x, y \in\mathbb{F}^{n\times k},\quad  \rho \in \mathbb{F^{k\times k}}.$$
+$$\mathop{\mathrm{diag}}(\Delta)\in \mathbb{F}^{n},\quad x, y \in\mathbb{F}^{n\times k},\quad  \rho \in \mathbb{F}^{k\times k}.$$
 "
 
 # ╔═╡ 8503c651-2bd3-43f2-9d4c-959962606ff5
@@ -576,7 +576,7 @@ The eigenvectors are reconstructed bottom-up, that is from the smallest matrix t
 
 In the $i$th step, for each $j=i+1,\ldots, n$ the following steps are performed:
 
-1. The equation (7) is solved for $\zeta$ (the first element of the eigenvector of the larger matrix). The quantity $\hat \xi$ is the last element of the eigenvectors and was stored in the forward pass. 
+1. The equation (5) is solved for $\zeta$ (the first element of the eigenvector of the larger matrix). The quantity $\hat \xi$ is the last element of the eigenvectors and was stored in the forward pass. 
 2. The first element of eigenvector of super-matrix is updated (set to $\zeta$).
 3. The last element of the eigenvectors of the super matrix is updated using (4). 
 
