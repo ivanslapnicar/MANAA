@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.22
+# v0.19.29
 
 using Markdown
 using InteractiveUtils
@@ -396,6 +396,15 @@ $$Ax=\mu x+xi\lambda=x(\mu+i\lambda).$$
 
 > If $A$ is an arrowhead or a DPRk matrix, then, due to fast inverses, one step of the methods requires $O(n)$ operations.
 "
+
+# ╔═╡ a386e5e0-940e-4967-a23b-fcb87223eb20
+function Wielandt(A,u)
+	n=length(u)
+	z=zeros(ComplexF64,n)
+	z[1]=1.0/conj(u[1])
+	A₁=(I-u*z')*A
+	A₁[2:end,2:end]
+end
 
 # ╔═╡ 22c35821-40f4-4c64-90b3-2ea2ce4e651c
 md"
@@ -1018,9 +1027,11 @@ function RQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) where
 	# using Rayleigh Quotient Iteration
 	n=size(A,1)
 	x=normalize!(ones(T,n))
+	# x=normalize!(randn(T,n))
 	# Only real shifts
     ν=(x'*x)\(x'*(A*x))
 	μ=real(ν)
+	# μ=ν
 	y=inv(A-μ*I(n))*x
 	normalize!(y)
     steps=1
@@ -1028,9 +1039,10 @@ function RQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) where
 		x=y
 		ν=(x'*x)\(x'*(A*x))
 		μ=real(ν)
+		# μ=ν
         y=inv(A-μ*I(n))*x
 		normalize!(y)
-        # println(ν)
+        # println(μ," ",ν)
         steps+=1
     end
 	if standardform
@@ -1070,6 +1082,44 @@ function MRQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) wher
 		y.*=z
 	end
 	println("MRQI ",steps)
+	normalize!(y)
+    ν, y
+end
+
+# ╔═╡ 6c3af74f-c338-4d26-bcf2-670c6caac3e3
+function MRQIa(A₁::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) where T<:Number
+	# Right eigenvalue and eigenvector of a (quaternion) Arrow matrix 
+	# using Modified Rayleigh Quotient Iteration
+	A=A₁
+	n=size(A,1)
+	x=normalize!(ones(T,n))
+	# Only real shifts
+    ν=(transpose(x)*x)\(transpose(x)*(A*x))
+	μ=real(ν)
+	A=A-μ*I(n)
+	y=inv(A)*x
+	normalize!(y)
+    steps=1
+    while norm(A*y-y*ν)>tol && steps<3000
+		x=y
+		ν=(transpose(x)*x)\(transpose(x)*(A*x))
+		μ=real(ν)
+		A=A-μ*I(n)
+        y=inv(A)*x
+		normalize!(y)
+		z=standardformx(ν)
+    	ν=inv(z)*ν*z
+		y.*=z
+        println(μ, " ",ν)
+        steps+=1
+    end
+	ν=(transpose(x)*x)\(transpose(x)*(A₁*x))
+	if standardform
+		z=standardformx(ν)
+    	ν=inv(z)*ν*z
+		y.*=z
+	end
+	println("MRQIa ",steps)
 	normalize!(y)
     ν, y
 end
@@ -1152,7 +1202,7 @@ begin
 	T=QuaternionF64
 	# T=ComplexF64
 	n=8
-	Esolver=MRQI
+	Esolver=RQI
 	# Esolver=Power
 	# Esolver=RQI
 end
@@ -1211,6 +1261,38 @@ begin
 		return λ
 	end
 end
+
+# ╔═╡ 49d0ee41-a462-4e87-8fb8-844013d1a6f0
+begin
+	# Test the Wielandt deflation on a general matrix
+	Random.seed!(1234)
+	H=randn(6,6)
+	eigvals(H)
+end
+
+# ╔═╡ ab69da96-b5e4-497c-8f8b-6685aa616667
+λₕ,uₕ=RQI(H)
+
+# ╔═╡ 062b3746-4735-4a58-9c03-b8eec7a97df1
+H₁=Wielandt(H,uₕ)
+
+# ╔═╡ 82cbe0bf-5865-4a03-9593-aca13fc13276
+λₕ₁,uₕ₁=RQI(H₁)
+
+# ╔═╡ 943d96f3-eb8d-42be-a15a-0f62ce0268db
+H₂=Wielandt(H₁,uₕ₁)
+
+# ╔═╡ a6e642d9-308a-42f8-9188-4c619de353d3
+λₕ₂,uₕ₂=RQI(H₂)
+
+# ╔═╡ febe9ea1-2632-470a-81a1-27a36b04030d
+standardform(λₕ₂)
+
+# ╔═╡ 2f4b49d4-3750-48d5-aa6c-ced6ce482445
+eigvals(H₁)
+
+# ╔═╡ 1b77811f-29e6-4028-8dbf-2249b5ac74c8
+eigvals(H₂)
 
 # ╔═╡ e5ab4bf6-4d90-4dd5-9dc6-82adb68ce753
 begin
@@ -1391,6 +1473,12 @@ Esolver
 # ╔═╡ 4afebe6d-1ae1-47e0-9b60-f4f4429c4ce6
 ll,yy=Esolver(A)
 
+# ╔═╡ 66c99539-9e69-46b3-9ad9-1e978f76c7bf
+aa=QuaternionF64(0.0,1,0,0)
+
+# ╔═╡ 84630f59-63d6-4522-a51c-6689b83a1012
+inv(sqrt(aa))
+
 # ╔═╡ 1d775cf0-79f7-4e3d-926e-6e7d719c0094
 norm(A*yy-yy*ll)
 
@@ -1426,6 +1514,9 @@ ErrorB=norm(Matrix(B)*F.vectors-F.vectors*Diagonal(F.values))
 # ╔═╡ 780548c4-f550-40eb-b075-193f3276096c
 ErrorA, ErrorB
 
+# ╔═╡ 3e426783-3218-4821-9aec-039bbdf05525
+cond(F.vectors)*1e-12
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -1445,7 +1536,7 @@ Quaternions = "~0.7.4"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.5"
+julia_version = "1.9.3"
 manifest_format = "2.0"
 project_hash = "d17938f1768a37014a2570862d8911c72482d4a6"
 
@@ -1474,7 +1565,7 @@ version = "0.11.4"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.1+0"
+version = "1.0.5+0"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -1551,7 +1642,7 @@ version = "1.10.2+0"
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 
 [[deps.LinearAlgebra]]
-deps = ["Libdl", "libblastrampoline_jll"]
+deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.Logging]]
@@ -1569,14 +1660,14 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.0+0"
+version = "2.28.2+0"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2022.2.1"
+version = "2022.10.11"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
@@ -1585,7 +1676,7 @@ version = "1.2.0"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.20+0"
+version = "0.3.21+4"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
@@ -1594,9 +1685,9 @@ uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "2.5.10"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.8.0"
+version = "1.9.2"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
@@ -1656,22 +1747,28 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [[deps.SparseArrays]]
-deps = ["LinearAlgebra", "Random"]
+deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+version = "1.9.0"
+
+[[deps.SuiteSparse_jll]]
+deps = ["Artifacts", "Libdl", "Pkg", "libblastrampoline_jll"]
+uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
+version = "5.10.1+6"
 
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
-version = "1.0.0"
+version = "1.0.3"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
-version = "1.10.1"
+version = "1.10.0"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -1697,12 +1794,12 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
-version = "1.2.12+3"
+version = "1.2.13+0"
 
 [[deps.libblastrampoline_jll]]
-deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
+deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.1.1+0"
+version = "5.8.0+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1727,6 +1824,16 @@ version = "17.4.0+0"
 # ╟─b299fcf7-7ced-45d1-a55c-74482ecb0c60
 # ╟─f3a47c9d-c3ba-4056-a3d7-bb4050b3175c
 # ╟─f6769f8f-19ad-47c5-a1ec-2e3c780f6cd7
+# ╠═49d0ee41-a462-4e87-8fb8-844013d1a6f0
+# ╠═ab69da96-b5e4-497c-8f8b-6685aa616667
+# ╠═a386e5e0-940e-4967-a23b-fcb87223eb20
+# ╠═062b3746-4735-4a58-9c03-b8eec7a97df1
+# ╠═2f4b49d4-3750-48d5-aa6c-ced6ce482445
+# ╠═82cbe0bf-5865-4a03-9593-aca13fc13276
+# ╠═943d96f3-eb8d-42be-a15a-0f62ce0268db
+# ╠═1b77811f-29e6-4028-8dbf-2249b5ac74c8
+# ╠═a6e642d9-308a-42f8-9188-4c619de353d3
+# ╠═febe9ea1-2632-470a-81a1-27a36b04030d
 # ╟─22c35821-40f4-4c64-90b3-2ea2ce4e651c
 # ╟─fa8ead94-9787-462b-9f41-47fcb41a1a17
 # ╟─ff113c87-a72d-4556-98f9-e1e42782a1e6
@@ -1755,6 +1862,7 @@ version = "17.4.0+0"
 # ╟─488877d8-1dd7-43a0-97e1-ce12c2555f5d
 # ╠═7570c157-1f63-47e1-9d31-c2a690e5f55b
 # ╠═1bda8dad-13cc-4746-9242-ae4e555fa480
+# ╠═6c3af74f-c338-4d26-bcf2-670c6caac3e3
 # ╟─ce762b41-6522-46d1-a332-eca6756d9687
 # ╠═720abc22-e9ec-48c4-a543-c83fd850b56e
 # ╟─98d415a5-1cdd-48ae-bad2-46230a7df2b9
@@ -1769,6 +1877,8 @@ version = "17.4.0+0"
 # ╠═9e42901c-6700-46b6-bda8-4edfd92c17fd
 # ╠═ad608357-03db-46a6-a8f8-86f7a2feec7c
 # ╠═4afebe6d-1ae1-47e0-9b60-f4f4429c4ce6
+# ╠═66c99539-9e69-46b3-9ad9-1e978f76c7bf
+# ╠═84630f59-63d6-4522-a51c-6689b83a1012
 # ╠═1d775cf0-79f7-4e3d-926e-6e7d719c0094
 # ╠═ca7a2021-818f-40ef-a81d-19814af94654
 # ╠═86010eb7-60e7-4373-8dbe-39ab63c81f73
@@ -1779,5 +1889,6 @@ version = "17.4.0+0"
 # ╠═398efe34-3e43-437c-9bdf-3875b58d77b8
 # ╠═76811f31-51e7-47b5-a4ed-249c02693787
 # ╠═2865d727-ada1-42f7-b7bf-6762d39b08de
+# ╠═3e426783-3218-4821-9aec-039bbdf05525
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
