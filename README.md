@@ -8,7 +8,7 @@ Notebooks are written in [Julia](https://julialang.org) using [Pluto.jl](https:/
 
 ## Contents
 
-* [Fast.jl](https://github.com/ivanslapnicar/MANAA/) and [Fast.jl.html](https://ivanslapnicar.github.io/MANAA/Fast.jl.html) - files accompanying and enhancing the paper: Nevena Jakovčević Stor and Ivan Slapničar, _Fast multiplication, determinants, and inverses of arrowhead and diagonal-plus-rank-one matrices over associative fields_, submitted.
+* [Fast.jl](https://github.com/ivanslapnicar/MANAA/) and [Fast.html](https://ivanslapnicar.github.io/MANAA/Fast.html) - files accompanying and enhancing the paper: Nevena Jakovčević Stor and Ivan Slapničar, _Fast determinants and inverses of arrowhead and diagonal-plus-rank-one matrices over associative fields_, submitted.
 
 * [FoCM_2023.jl](https://github.com/ivanslapnicar/MANAA/) and [FoCM_2023.jl.html](https://ivanslapnicar.github.io/MANAA/FoCM_2023.jl.html) - theory and code related to the paper: Ivan Slapničar, Thaniporn Chaysri and Nevena Jakovčević Stor, _Fast computations with arrowhead and diagonal-plus-rank-k matrices over associative fields_, as presented at the FoCM 2023, Workshop III.1 on Numerical Linear Algebra.
 
