@@ -10,7 +10,7 @@ Notebooks are written in [Julia](https://julialang.org) using [Pluto.jl](https:/
 
 * [Fast.jl](https://github.com/ivanslapnicar/MANAA/) and [Fast.html](https://ivanslapnicar.github.io/MANAA/Fast.html) - files accompanying and enhancing the paper: Nevena Jakovčević Stor and Ivan Slapničar, _Fast determinants and inverses of arrowhead and diagonal-plus-rank-one matrices over associative fields_, submitted.
 
-* [FoCM_2023.jl](https://github.com/ivanslapnicar/MANAA/) and [FoCM_2023.jl.html](https://ivanslapnicar.github.io/MANAA/FoCM_2023.jl.html) - theory and code related to the paper: Ivan Slapničar, Thaniporn Chaysri and Nevena Jakovčević Stor, _Fast computations with arrowhead and diagonal-plus-rank-k matrices over associative fields_, as presented at the FoCM 2023, Workshop III.1 on Numerical Linear Algebra.
+* [ED_Arrow.jl](https://github.com/ivanslapnicar/MANAA/src), [ED_Arrow.html](https://ivanslapnicar.github.io/ED_Arrow.html), [ED_DPRk.jl](https://github.com/ivanslapnicar/MANAA/src), [ED_DPRk.html](https://ivanslapnicar.github.io/ED_Arrow.html), [Plotting.jl](https://github.com/ivanslapnicar/MANAA/src), and [Plotting.html](https://ivanslapnicar.github.io/ED_Arrow.html) - files accompanying and enhancing the paper: : Ivan Slapničar, Thaniporn Chaysri and Nevena Jakovčević Stor, _Fast Eigenvalue Decomposition of Arrowhead and Diagonal-Plus-Rank-k Matrices of Quaternions_, submitted.
 
 ## Cloning the repository
 
@@ -21,11 +21,6 @@ git clone https://github.com/ivanslapnicar/MANAA
 You can also download the repository as a zip file.
 
 The repository is now located in the directory  `MANAA`. The notebooks are located in the directory `MANAA/src`
-
-## Running the notebooks on `binder`
-
-Choose the above link to `.html` version of the notebook. In the botebook, 
-press `Edit or run this notebook` button and choose `binder`. This will read all the necessary packages and start the notebook (within several minutes).
 
 ## Running notebooks on your computer
 
