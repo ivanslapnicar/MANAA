@@ -4,13 +4,13 @@ Notebooks for the project "Matrix Algorithms in Noncommutative Associatve Algebr
 
 This repository contains software which accompanies and enhances research and publications within the project "Matrix Algorithms in Noncommutative Associatve Algebras" $\to$ [project's website](http://manaa.fesb.unist.hr/).
 
-Notebooks are written in [Julia](https://julialang.org) using [Pluto.jl](https://github.com/fonsp/Pluto.jl).
+Notebooks are written in [Julia](https://julialang.org) using [Pluto.jl](https://github.com/fonsp/Pluto.jl). The `*.jl` files are in the directory `/src`. The `*.html` files are in the directory `/docs`.
 
 ## Contents
 
 * [Fast.jl](https://github.com/ivanslapnicar/MANAA/) and [Fast.html](https://ivanslapnicar.github.io/MANAA/Fast.html) - files accompanying and enhancing the paper: Nevena Jakovčević Stor and Ivan Slapničar, _Fast determinants and inverses of arrowhead and diagonal-plus-rank-one matrices over associative fields_, submitted.
 
-* [ED_Arrow.jl](https://github.com/ivanslapnicar/MANAA/src), [ED_Arrow.html](https://ivanslapnicar.github.io/ED_Arrow.html), [ED_DPRk.jl](https://github.com/ivanslapnicar/MANAA/src), [ED_DPRk.html](https://ivanslapnicar.github.io/ED_Arrow.html), [Plotting.jl](https://github.com/ivanslapnicar/MANAA/src), and [Plotting.html](https://ivanslapnicar.github.io/ED_Arrow.html) - files accompanying and enhancing the paper: : Ivan Slapničar, Thaniporn Chaysri and Nevena Jakovčević Stor, _Fast Eigenvalue Decomposition of Arrowhead and Diagonal-Plus-Rank-k Matrices of Quaternions_, submitted.
+* [ED_Arrow.jl](https://github.com/ivanslapnicar/MANAA/), [ED_Arrow.html](https://ivanslapnicar.github.io/MANAA/ED_Arrow.html), [ED_DPRk.jl](https://github.com/ivanslapnicar/MANAA/), [ED_DPRk.html](https://ivanslapnicar.github.io/MANAA/ED_DPRk.html), [Plotting.jl](https://github.com/ivanslapnicar/MANAA/), and [Plotting.html](https://ivanslapnicar.github.io/MANAA/Plotting.html) - files accompanying and enhancing the paper: : Ivan Slapničar, Thaniporn Chaysri and Nevena Jakovčević Stor, _Fast Eigenvalue Decomposition of Arrowhead and Diagonal-Plus-Rank-k Matrices of Quaternions_, submitted.
 
 ## Cloning the repository
 
