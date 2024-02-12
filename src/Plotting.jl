@@ -59,7 +59,7 @@ v=parse(Int,n)
 for i=1:4
 	(matrixtype,n,Esolver,tol,ext)=split(filename[i],"_")
 	@load filename[i] Meansteps Times Residuals Errorbounds Errors
-	scatter(Errorbounds, label="Error bounds", tickfontsize=16, legendfontsize=16, marker=:square,mc=:green,ms=5,title="Matrix=$(matrixtype), n=$(n), Method=$(Esolver)", titlefontsize=16, xlabel="Experiment number",xlabelfontsize=18)
+	scatter(Errorbounds, label="Error bounds", tickfontsize=16, legendfontsize=16, marker=:square,mc=:green,ms=5,title="Matrix=$(matrixtype), n=$(n), Esolver=$(Esolver)", titlefontsize=16, xlabel="Experiment number",xlabelfontsize=18)
 	scatter!(Residuals,yaxis=:log10,label="Residuals",mc=:blue,ms=7, xticks=0:1:10)
 	# ,yticks=[1e-14,1e-13,1e-12,1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3]
 	if parse(Int,n)<30
@@ -79,7 +79,7 @@ end
 for i=5:8
 	(matrixtype,n,kk,Esolver,tol,ext)=split(filename[i],"_")
 	@load filename[i] Meansteps Times Residuals Errorbounds Errors
-	scatter(Errorbounds, label="Error bounds", tickfontsize=16, legendfontsize=16, marker=:square,mc=:green,ms=5,title="Matrix=$(matrixtype), n=$(n), k=$(kk), Method=$(Esolver)", titlefontsize=16, xlabel="Experiment number",xlabelfontsize=18)
+	scatter(Errorbounds, label="Error bounds", tickfontsize=16, legendfontsize=16, marker=:square,mc=:green,ms=5,title="Matrix=$(matrixtype), n=$(n), k=$(kk), Esolver=$(Esolver)", titlefontsize=16, xlabel="Experiment number",xlabelfontsize=18)
 	scatter!(Residuals,yaxis=:log10,label="Residuals",mc=:blue,ms=7, xticks=0:1:10)
 	# ,yticks=[1e-14,1e-13,1e-12,1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3]
 	if parse(Int,n)<30
@@ -97,7 +97,7 @@ for i=5:8
 end
 
 # ╔═╡ 0a4dcc9a-0ff8-4756-90c3-736c727c2f75
-plt[5]
+plt[8]
 
 # ╔═╡ 08ffef6b-a369-41de-8c6e-d9d5ba6e33fd
 md"""
