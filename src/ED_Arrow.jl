@@ -1139,10 +1139,12 @@ begin
 			# Deflated matrix
 			g=u[1]\A.u[1]
 			w=A.u[2:end]-u[2:end-1]*g
+			# Compute the deflated matrix ̂A
 			α=A.α-u[end]*g
 			A=Arrow(A.D[2:end],w,A.v[2:end],α,length(w)+1)
 			# Eigenpair
 			println("Eigenvalue ",i)
+			# Update and store γᵢ, νᵢ, χᵢ, and ψᵢ according to Lemma 4
 			λ[i],u,steps[i]=Esolver(A,true,tol)
 			γ[i]=u[1]*λ[i]/u[1]
 			ν[i]=u[1]
@@ -1150,7 +1152,7 @@ begin
 			ψ[i]=u[end]
 			# println(u[1],A.ρ*A.v'*u)
 		end
-		# Last eigenvalue
+		# Compute and store the last eigenvalue in standard form
 		μ=A.α-u[2]*(u[1]\A.u[1])
 		z=[one(T)]
 		if standardform
@@ -1168,11 +1170,16 @@ begin
 			
 		for i=n-1:-1:1
 			for j=i+1:n
+				# Solve the Sylvester equation γᵢζ-ζλⱼ=-χᵢψⱼ for ζ
 				ζ=sylvester(γ[i],-λ[j],χ[i]*ψ[j])
+				# Update νⱼ and ψⱼ, the first and the last element of the 
+				# eigenvector of the super matrix, respectively:
 				ν[j]=ζ
 				ψ[j]=ψ[j]+ψ[i]*(ν[i]\ ζ)
 			end
 		end
+		# Reconstruct all eigenvectors from the computed eigenvalues 
+		# and respective first and last elements using (12)
 		U=eigvecs(A₀,λ,ψ)
 		return Eigen(λ,U), sum(steps)/(n-1)
 	end
@@ -1288,7 +1295,7 @@ Quaternions = "~0.7.4"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.0"
+julia_version = "1.10.2"
 manifest_format = "2.0"
 project_hash = "fced7a42fd0923df653f2b997f7d29704f35e065"
 
@@ -1374,7 +1381,7 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.5+1"
+version = "1.1.0+0"
 
 [[deps.ConcurrentUtilities]]
 deps = ["Serialization", "Sockets"]
@@ -1814,7 +1821,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+2"
+version = "0.3.23+4"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]

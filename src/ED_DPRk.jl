@@ -1032,7 +1032,7 @@ begin
 		# First and second elements of A.x
 		χ=Vector{Vector{T}}(undef,n)
 		x₁=Vector{Matrix{T}}(undef,n)
-		# First and second elements of current u
+		# First and second elements of the current u
 		ν=Vector{T}(undef,n)
 		u₁=Vector{Vector{T}}(undef,n)
 		# Eigenvector matrix
@@ -1054,9 +1054,11 @@ begin
 			# Deflated matrix
 			g=Matrix(transpose(u[1]\χ[i-1]))
 			x=A.x[2:end,:]-u[2:end]*g
+			# Compute the deflated matrix ̂A
 			A=DPRk(A.Δ[2:end],x,A.y[2:end,:],A.ρ)
 			# Eigenpair of the deflated matrix
 			λ[i],u, steps[i]=Esolver(A,true,tol)
+			# Update and store γᵢ, νᵢ, χᵢ, u₁ᵢ, and x₁ᵢ according to Lemma 6
 			γ[i]=u[1]*λ[i]/u[1]
 			ν[i]=u[1]
 			χ[i]=A.x[1,:]
@@ -1074,9 +1076,15 @@ begin
 				if length(u₁[j])==k
 					# Standard case
 					υ=[ν[j];(u₁[j])[1:k-1]]
+					# Compute α using (23)
 					α=(x₁[i]-u₁[i]*(1/ν[i])*transpose(χ[i]))\(υ*λ[j]-A₀.Δ[i+1:i+k].*υ)
+					# Solve the Sylvester equation γᵢζ-ζλⱼ=-χᵢα for ζ
 					ζ=sylvester(γ[i],-λ[j],transpose(χ[i])*α)
+					# Update the second element of the eigenvector of the 
+					# super-matrix:
 					u₁[j]=υ.+u₁[i]*(1/ν[i])*ζ
+					# Update the first element of the eigenvector of the 
+					# super-matrix:
 					ν[j]=ζ
 				else
 					# Short case - direct formula
@@ -1088,10 +1096,13 @@ begin
 				end
 			end
 		end
-
+		
+		# Reconstruct all eigenvectors from the computed eigenvalues 
+		# and respective first elements using (21)
 		ξ=Vector{Vector{T}}(undef,n)
 		[ξ[i]=[ν[i];u₁[i][1:k-1]] for i=1:n]
 		U=eigvecs(A₀,λ,ξ)
+		
 		return Eigen(λ,U), sum(steps)/(n-1)
 	end
 end
@@ -1193,7 +1204,7 @@ Quaternions = "~0.7.4"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.0"
+julia_version = "1.10.2"
 manifest_format = "2.0"
 project_hash = "fced7a42fd0923df653f2b997f7d29704f35e065"
 
@@ -1279,7 +1290,7 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.5+1"
+version = "1.1.0+0"
 
 [[deps.ConcurrentUtilities]]
 deps = ["Serialization", "Sockets"]
@@ -1719,7 +1730,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+2"
+version = "0.3.23+4"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
