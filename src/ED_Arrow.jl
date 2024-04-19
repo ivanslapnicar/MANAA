@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.36
+# v0.19.40
 
 using Markdown
 using InteractiveUtils
@@ -302,62 +302,112 @@ Eigenvalues are invariant under similarity.
 If $\lambda$ is in the standard form, it is invariant under similarity with complex numbers.  
 "
 
-# ╔═╡ f3a47c9d-c3ba-4056-a3d7-bb4050b3175c
+# ╔═╡ 82c8a221-3125-42a1-a033-02408688b6ae
 md"
-## Power method
+## A Quaternion QR algorithm
 
-Starting with the unit-norm vector $x_0$, the __Power method__ produces a sequence of vectors
+The method is described in the paper 
+
+[BGBM89] Angelika Bunse-Gerstner, Ralph Byers, and Volker Mehrmann, A Quaternion QR Algorithm, Numer. Math 55, 83-95 (1989)
+
+Given a matrix $A\in\mathbb{Q}^{n\times n}$, the algorithm has four steps:
+
+1. Reduce $A$ to Hessenberg form by Householder reflectors:
 
 $$
-y_k=Ax_k, \quad x_{k+1}=\frac{y_k}{\| y_k\|},\quad k=0,1,2,\ldots$$
+X^*AX=H,$$
 
-If $\lambda$ is a dominant eigenvalue, and $x_0$ has a component in the direction of its eigenvector $x$, then $y_k\to x$ and $x^*Ax=\lambda$. The convergence is linear.
+where $X$ is unitary and $H$ is an upper Hessenberg matrix.
 
-> Due to fast matrix × vector multiplication, one step of the method requires $O(n)$ operations.  
+2. Compute the Schur decomposition of $H$,
+
+$$
+Q^*HQ=T,$$
+
+where $Q$ is unitary and $T$ is upper triangular matrix with eigenvalues of $A$ on the diagonal, $\Lambda=\operatorname{diag}(T)$.
+
+3. Compute the eigenvectors $V$ of $T$ by solving the Sylvester equation:
+
+$$
+TV-V\Lambda=0.$$
+
+Then $V^{-1}TV=\Lambda$.
+
+4. Multiply 
+
+$$U=X*Q*V.$$
+
+Then $U^{-1}AU=\Lambda$ is the eigenvalue decomposition of $A$.
+
+Since the algorithm is derived for general matrices, it requires $O(n^3)$ operations. However, the algorithm is stable and we use it in section on Numerical experiments for comparison. 
+
+The entire algorithm is found in the function `eigen()`.
 "
 
-# ╔═╡ 4701622a-8d1c-47aa-a30d-7b0e61d378d4
+# ╔═╡ 09fe2fc2-5ea7-428d-b0b4-f11221fbd6d3
 md"
-## Inverse iterations
+### Reduction to Hessenberg matrix
 
-The method of inverse iterations is the powev method applied to the matrix $A^{-1}$. The method produces a sequence of vectors
+The reduction of a quaternionic matrix to Hessenberg form is computed similarly to the real or complex case. Details of the method are given in Algorithms 1-3 in the Appendix of [BGBM89].
+
+The Julia implementation is given in the function `hessenberg()`.
+"
+
+# ╔═╡ 02afde06-04e6-44ae-b8c4-3e8e00d5b7cc
+md"
+###  Computing the Schur decomposition
+
+Given the upper Hessenber matrix $A \in\mathbb{Q}^{n\times n}$, the method 
+applies complex shift $\mu$ to $A$ by using Francis standard double shift on the matrix 
 
 $$
-A y_k=x_k \textrm{(solution of the system)}, \quad x_{k+1}=\frac{y_k}{\| y_k\|},\quad k=0,1,2,\ldots$$
+M=A^2-(\mu+\bar\mu)A+\mu\bar\mu I$$
 
-If $\lambda$ is an absolutely smallest eigenvalue, and $x_0$ has a component in the direction of its eigenvector $x$, then $y_k\to x$ and $x^*Ax=\lambda$. The convergence is linear.
+and applying it implicitly on $A$.
 
-> Due to fast fast inversion (solution of the system), one step of the method requires $O(n)$ operations.  
+If $Ax=x\lambda$, then 
+
+$$
+\begin{aligned}
+Mx&=(A^2-(\mu+\bar\mu)A+\mu\bar\mu I)x=x\lambda^2-
+x(\mu+\bar\mu)\lambda+x\mu\bar\mu\\
+&=x(\lambda^2-(\mu+\bar\mu)\lambda+\mu\bar\mu)
+\end{aligned}$$
+
+For the perfect shift, $\mu=\lambda$, it holds
+
+$$
+\lambda^2-(\mu+\bar\mu)\lambda+\mu\bar\mu=\lambda^2-(\lambda+\bar\lambda)\lambda+\lambda\bar\lambda=0.$$
+
+Details of the method are given in Algorithm 4 in the Appendix of [BGBM89].
+
+The Julia implementation is given in the function `schur()`.
+"
+
+
+# ╔═╡ 9d38f85e-058a-426c-ae71-2f664e8357a2
+md"
+### Solving the Sylvester equation
+
+The Sylvester equation 
+
+$$
+TV-V\operatorname{diag}T=0$$
+
+is solved as in the real or complex case. 
+
+The Julia implementation is given in the function `sylvester()`.
 "
 
 # ╔═╡ f6769f8f-19ad-47c5-a1ec-2e3c780f6cd7
 md"
-## RQI and RQIjd
+## RQI
 
 Starting with the unit-norm vector $x_0$, the __Rayleigh Quotient Iteration__ (RQI) produces sequences of shifts and vectors
 
 $$
 \mu_k=\operatorname{real}(x_k^*Ax_k),\quad y_k=(A-\mu_kI)^{-1} x_k, \quad  x_{k+1}=\frac{y_k}{\| y_k\|},\quad k=0,1,2,\ldots$$
 
-Starting with the unit-norm vector $x_0$, the __Rayleigh Quotient Iteration with Jacobi-Davidson type correction__ (RQIjd) produces sequences of shifts and vectors: for $k=0,1,2,\ldots$ repeat
-
-$$
-\begin{align*}
-\mu_k &=\operatorname{real} (x_k^*Ax_k),\qquad \text{(RQI step)}\\
-y_k&=(A-\mu_kI)^{-1} x_k, \\
-y_{k}&=\frac{y_k}{\| y_k\|}, \\
-\quad \theta_k&=\operatorname{real} (y_k^*Ay_k),\quad \qquad \text{(prepare JD correction})\\
-r_k&=-(A-\theta_kI)y_k,\\ 
-α_k&=-[y_k^*(A-θ_kI)^{-1} y_k]^{-1}(y_k^*(A-θ_kI)^{-1} r_k),\\
-z_k& =r_k+y_k α_k, \\
-t_k&=(A-θ_kI)^{-1} z_k \\
-x_{k+1}&=y_k+t_k,\qquad \text{(make JD correction)} \\
-x_{k+1}&=\frac{x_k}{\| x_k\|}.
-\end{align*}$$
-"
-
-# ╔═╡ 24724b41-f108-4dc7-b6dd-193a3e39bc37
-md"
 > Due to fast inverses, one step of the methods requires $O(n)$ operations.
 
 Since the eigenvalues are not shift invariant, only real shifts can be used. However, this works fine due to the following: let the matrix $A -\mu I$ have purely imaginary standard eigenvalue:
@@ -367,6 +417,77 @@ $$(A-\mu I)x=x (i λ),\qquad \mu,\lambda\in\mathbb{R}.$$
 Then 
 
 $$Ax=\mu x+xi\lambda=x(\mu+i\lambda).$$
+
+The method converges, but, since only real shifts are used, the convergence is rather slow and requires a large number of iterations. 
+"
+
+# ╔═╡ 24724b41-f108-4dc7-b6dd-193a3e39bc37
+md"
+## RQI with double shifts
+
+We can apply the double shift $\mu$ and $\bar \mu$ similarly as in the [BGGM] method. 
+
+The __Rayleigh Quotient Iteration with Double Shifts__ (RQIds) produces sequences of shifts and vectors
+
+$$
+\mu_k=\frac{1}{x_k^*x_k} x_k^*Ax_k,\quad 
+y_k=(A^2-(\mu_k+\bar\mu_k)A+\mu_k\bar\mu_k I)^{-1} x_k, \quad  
+x_{k+1}=\frac{y_k}{\| y_k\|},\quad k=0,1,2,\ldots$$
+
+> Due to the arrowhead structure of $A$, one step of the method requires $O(n)$ operations:
+
+ $y_k$ is the solution of the system
+
+$$
+(A^2-(\mu_k+\bar\mu_k)A+\mu_k\bar\mu_k I) y_k=x_k.$$
+
+Let 
+
+$$
+y_k=y,\quad
+x_k=\begin{bmatrix} x \\ \xi \end{bmatrix},\quad  \hat\alpha=\mu_k+\bar\mu_k,\quad 
+\beta=\mu_k\bar\mu_k.$$
+
+Notice that $\hat \alpha$ and $\beta$ are real. Then:
+
+$$
+\left(\begin{bmatrix} D & u \\v^* & \alpha \end{bmatrix} \begin{bmatrix} D & u \\v^* & \alpha \end{bmatrix} -\hat\alpha \begin{bmatrix} D & u \\v^* & \alpha \end{bmatrix} + \beta \begin{bmatrix} I & 0 \\ 0  & 1 \end{bmatrix} \right) y = \begin{bmatrix} x \\ \chi \end{bmatrix}.$$
+"
+
+# ╔═╡ a341e994-50a7-4848-8ec8-8794a89a9063
+md"
+Therefore,
+
+$$
+\left(\begin{bmatrix} D^2 + uv^* & Du +u\alpha \\ v^*D+\alpha v^* & v^*u+\alpha^2 \end{bmatrix} -\hat\alpha \begin{bmatrix} D & u \\v^* & \alpha \end{bmatrix} + \beta \begin{bmatrix} I & 0 \\ 0  & 1 \end{bmatrix} \right) y = \begin{bmatrix} x \\ \chi \end{bmatrix},$$
+
+so
+
+$$
+\begin{bmatrix} D^2 -\hat\alpha D +\beta I +uv^* & 
+Du +u(\alpha-\hat\alpha) \\ 
+v^*D+(\alpha-\hat\alpha) v^* & 
+v^*u+(\alpha-\hat\alpha)\alpha+\beta \end{bmatrix}y = \begin{bmatrix} x \\ \chi \end{bmatrix}. \tag{1}$$
+"
+
+# ╔═╡ d3046577-b251-45b0-a743-a9970937811d
+md"
+The matrix $C=D^2 -\hat\alpha D +\beta I +uv^*$ is a DPRk (DPR1) matrix
+
+$$
+C=\operatorname{DPRk}(D^2 -\hat\alpha D +\beta I,u,v,1).$$
+
+Multiplication of equation (1) by the block matrix $\begin{bmatrix} C^{-1} & \\ & 1\end{bmatrix}$ from the left yields
+
+$$
+\begin{bmatrix} I & 
+C^{-1}(Du +u(\alpha-\hat\alpha)) \\ 
+v^*D+(\alpha-\hat\alpha) v^* & 
+v^*u+(\alpha-\hat\alpha)\alpha+\beta \end{bmatrix}y = \begin{bmatrix} C^{-1}x \\ \xi \end{bmatrix}. \tag{2}$$
+
+Let $M$ denote the matrix on the left hand side of equation (2). Then $M$ is an arrowhead matrix and, finally, $y=M^{-1}z$, where $z=\begin{bmatrix} C^{-1}x \\ \xi \end{bmatrix}$.
+
+Due to fast computation of inverses of arrowhead and DPRk matrices from Lemmas 2 and 3, respectively, one step of the RQIds method requires $O(n)$ operations. 
 "
 
 # ╔═╡ 22c35821-40f4-4c64-90b3-2ea2ce4e651c
@@ -561,6 +682,9 @@ After all iterations are completed, we have:
 * all other eigenvalues and the last elements of their corresponding eigenvectors.  
 
 The rest of the elements of the remaining eigenvectors are computed using the procedure described at the beginning of the previous section. This step also requires $O(n^2)$ operations.
+
+Due to floating-point error in operations with Quaternions, the computed eigenpairs have larger residuals that required. This is successfully remedied by running again few steps of the RQIds, but starting from the computed eigenvectors. This has the effect of using nearly perfect shifts, so typically just a few additional iterations are needed to attain the desired accuracy. This step also requires $O(n^2)$ operations.
+
 "
 
 # ╔═╡ e747a6e4-70df-4aff-993a-e9a9ad51fa03
@@ -691,20 +815,14 @@ begin
 	end
 end
 
-# ╔═╡ 1c0a18a8-8490-4790-b3b7-7f56edab3d43
-md"
-## `Power()`
-"
-
 # ╔═╡ 124aea10-888e-438c-b0e0-82cdc1cf6dcb
 md"
-## `InvIt()`
+## `\()`
 "
 
 # ╔═╡ 77352b2b-3642-41fe-bc8a-7046b054608b
 begin 
-	import Base.\
-	function \(A::Arrow{T},μ::AbstractFloat,x::Vector{T}) where T<:Number
+	function Base.:\(A::Arrow{T},μ::AbstractFloat,x::Vector{T}) where T<:Number
 		# Solution of a shifted system (A-μI)y=x with real shift μ
 		y=similar(x)
 		z=(A.D .-μ).\x[1:end-1]
@@ -713,7 +831,7 @@ begin
 		return y
 	end
 
-	function \(A::Arrow{T},x::Vector{T}) where T<:Number
+	function Base.:\(A::Arrow{T},x::Vector{T}) where T<:Number
 		# Solution of a system Ay=x
 		y=similar(x)
 		z=A.D.\x[1:end-1]
@@ -721,17 +839,51 @@ begin
 		y[1:end-1]=z-A.D.\(A.u*y[end])
 		return y
 	end
+end
 
-	function \(A::Arrow{T},D::Diagonal{T},x::Vector{T}) where T<:Number
-		# Solution of a shifted system (A-D)y=x, where D is Diagonal()
-		y=similar(x)
-		d=D.diag[1:end-1]
-		μ=D.diag[end]
-		z=(A.D .-d).\x[1:end-1]
-		y[end]=(A.α-μ-(A.v⋅((A.D .-d).\A.u)))\(x[end]-A.v⋅z)
-		y[1:end-1]=z-(A.D .-d).\(A.u*y[end])
-		return y
-	end
+# ╔═╡ 3566ab10-c23f-4f82-a4fb-2e3a134868a3
+md"
+## A Quaternion QR algorithm
+"
+
+# ╔═╡ 1c0a18a8-8490-4790-b3b7-7f56edab3d43
+md"
+## `Power()`
+"
+
+# ╔═╡ 488877d8-1dd7-43a0-97e1-ce12c2555f5d
+md"
+## `RQI()`
+"
+
+# ╔═╡ 12178ddc-c0bc-45cd-8c45-299b3ff46029
+md"
+## `RQIds()`
+"
+
+# ╔═╡ b909e897-bb2f-4171-9e43-caa326bae66d
+function Base.:\(A::DPRk{T},x::Vector{T}) where T<:Quaternion
+	ρ=-A.ρ/(one(T)+(A.y⋅(A.Δ .\A.x)*A.ρ))
+	A.Δ .\ (x+A.x.*(ρ*(A.y⋅(A.Δ.\x))))
+end
+
+# ╔═╡ b2d0628a-35c8-4d8e-ba25-480173557229
+function Base.:\(A::Arrow{T},α::Number, β::Number, x::Vector{T}) where T<:Quaternion
+	# Solution of a double shifted system (A^2-αA+βI)y=x with a Quaternion
+	# shift μ, where α=μ+conj(μ) and β=μ*conj(μ)
+	n=length(x)
+	B=DPRk(A.D.*(A.D.-α).+β,A.u,A.v,one(T))
+	# C=inv(DPRk(A.D.^2-α*A.D.+β,A.u,A.v,one(T)))
+	u=\(B,A.D.*A.u+A.u*(A.α-α))
+	z=\(B,x[1:end-1])
+	v=conj.(A.D).*A.v+A.v*(conj(A.α)-α)
+	α₀=A.v⋅A.u+(A.α-α)*A.α+β
+	# M=Arrow(ones(T,n-1),u,v,α₀,n)
+	# Solution of the system My=[z;x[end]]
+	y=similar(x)
+	y[end]=(α₀-v⋅u)\(x[end]-v⋅z)
+	y[1:end-1]=z-(u*y[end])
+	return y
 end
 
 # ╔═╡ 4e9666dc-26f7-429e-afc5-c72f14a34e9a
@@ -777,6 +929,199 @@ begin
 	
 end
 
+# ╔═╡ 6f71be95-f2bc-4f47-bbca-89bf8cd53cab
+begin
+	# This file containf Julia implementation of algorithms from the article
+	# [BGBM89] Angelika Bunse-Gerstner, Ralph Byers, and Volker Mehrmann, A
+	# Quaternion QR Algorithm, Numer. Math 55, 83-95 (1989)
+	
+	function HouseholderVector(x::AbstractVector{T}) where T<:Quaternion
+	    # Computes the Householder vector for a Quaternion vector x
+		# This is implementation of Algorithm A1 from [Appendix, BGBM89]
+	    v=copy(x)
+		if imag(v[1])!=zero(T)
+			v/=v[1]
+		end
+		v[1]+=norm(v)
+	    return v
+	end
+	
+	function LinearAlgebra.hessenberg(A₁::AbstractMatrix{T}) where T<:Quaternion
+		# Computes the reduction of the matrix A₁ to Hessenberg form, Q'*A₁*Q=H
+		# This is implementation of Algorithm A3 from [Appendix, BGBM89]
+		A=copy(A₁)
+		m=size(A,1)
+	    Q=Matrix{T}(I,m,m)
+	    for k=1:m-1
+	        v=HouseholderVector(A[k+1:m,k])
+	        β=(2/(v⋅v))*v
+	        A[k+1:m,k:m]-=β*(v'*A[k+1:m,k:m])
+			A[:,k+1:m]-=(A[:,k+1:m]*v)*β'
+	        Q[:,k+1:m]-=(Q[:,k+1:m]*v)*β'
+	    end
+	    return Q,triu(A,-1)
+	end
+	
+	function schur2(A₁::AbstractMatrix{T}) where T<:Quaternion
+		# Schur decomposition for 2×2 matrix of Quaternions
+		A=copy(A₁)
+		n=size(A,1)
+		if n!=2
+			println(" Wrong dimension ")
+			return
+		end
+		Q=Matrix{T}(I,n,n)
+		tol=1.0e-14
+		step=0
+		while abs(A[2,1])>tol*√(abs(A[1,1])*abs(A[2,2])) && step<10
+			# Choose μ
+			μ=A[n,n]
+			# First column of M,  
+			# First step of implicit method
+			x₁=A[1,1]^2+A[1,2]*A[2,1]-2*real(μ)*A[1,1]+abs(μ)^2
+			x₂=A[2,1]*A[1,1]+A[2,2]*A[2,1]-2*real(μ)*A[2,1]
+			x=[x₁,x₂]
+			# First transformation
+			v=HouseholderVector(x)
+	    	β=(2/(v⋅v))*v
+			A-=β*(v'*A)
+			A-=(A*v)*β'
+	    	# Q[1:3,:]-=β*(v'*Q[1:3,:])
+			Q-=(Q*v)*β'
+			step+=1
+		end
+		# println(" Schur2 ",step)
+		return triu(A),Q
+	end
+	
+	function LinearAlgebra.schur(A₀::AbstractMatrix{T},tol::Real=1e-12) where T<:Quaternion
+		# Schur factorization of an upper Hessenberg matrix A₀ of Quaternions,
+		# Q'*A₀*Q=T. This is implementation of Algorithm A4 from [Appendix, BGBM89]
+		A=copy(A₀)
+		n=size(A,1)
+		# println(" n= ",n)
+		Q=Matrix{T}(I,n,n)
+		if n==1
+			return A, Q
+		end
+		if n==2
+			R₀,Q₀=schur2(A)
+			return R₀,Q₀
+		end
+		maxsteps=200
+		steps=0
+		k=0
+		dh=zeros(T,n)
+		da=zeros(T,n)
+		while k==0 && steps<=maxsteps
+			# Choose μ
+			# Standard shift
+			μ=A[n,n]
+			# Wilkinson's shift
+			#=
+			R₀,Q₀=schur2(A[n-1:n,n-1:n])
+			μ₀=diag(R₀)
+			μ=μ₀[findmin(abs,μ₀.-A[n,n])[2]]
+			=#
+			# First column of M,  
+			# First step of implicit method
+			x₁=A[1,1]^2+A[1,2]*A[2,1]-2*real(μ)*A[1,1]+abs(μ)^2
+			x₂=A[2,1]*A[1,1]+A[2,2]*A[2,1]-2*real(μ)*A[2,1]
+			x₃=A[3,2]*A[2,1]
+			x=[x₁,x₂,x₃]
+			# First transformation
+			v=HouseholderVector(x)
+	    	β=(2/(v⋅v))*v
+			A[1:3,:]-=β*(v'*A[1:3,:])
+			k₁=min(n,4)
+			A[1:k₁,1:3]-=(A[1:k₁,1:3]*v)*β'
+	    	# Q[1:3,:]-=β*(v'*Q[1:3,:])
+			Q[:,1:3]-=(Q[:,1:3]*v)*β'
+			# Iterations - chasing the bulge
+			for i=1:n-2
+				k=min(i+3,n)
+				x=A[i+1:k,i]
+				v=HouseholderVector(x)
+				β=(2/(v⋅v))*v
+				A[i+1:k,:]-=β*(v'*A[i+1:k,:])
+				A[:,i+1:k]-=(A[:,i+1:k]*v)*β'
+	    		# Q[i+1:k,:]-=β*(v'*Q[i+1:k,:])
+				Q[:,i+1:k]-=(Q[:,i+1:k]*v)*β'
+			end
+			steps+=1
+	        # Deflation criterion
+			dh=abs.(diag(A,-1))
+			da=abs.(diag(A))
+	        k=findfirst(dh .< sqrt.(da[1:n-1].*da[2:n])*tol)
+	        k=k==nothing ? 0 : k
+			if k>0
+				# println(" k= ", k, " dh₁= ",dh[k]/√(da[k]*da[k+1]))
+			end
+		end
+		if steps==maxsteps+1
+			# No proper convergence, but move on with the relatively 
+			# smallest element in the sub-diagonal)
+			println(" No convergence ")
+			dh₁,k=findmin(dh ./ sqrt.(da[1:n-1].*da[2:n]))
+			println(" k= ",k," dh₁= ", dh₁)
+		end
+		# println(" steps= ", steps)
+		# Split the matrices
+		A₁=A[1:k,1:k]
+		A₂=A[k+1:n,k+1:n]
+		A₁₂=A[1:k,k+1:n]
+		# Recursive call
+		R₁,Q₁=schur(A₁)
+		R₂,Q₂=schur(A₂)
+		# Put the solution back
+		A[1:k,1:k]=R₁
+		A[k+1:n,k+1:n]=R₂
+		A[1:k,k+1:n]=Q₁'*A[1:k,k+1:n]*Q₂
+		Q[:,1:k]*=Q₁
+		Q[:,k+1:n]*=Q₂
+		# Return
+		return triu(A),Q
+	end
+	
+	function Quaternions.sylvester(A::AbstractMatrix{T}) where T<:Quaternion
+	    n=size(A,1)
+	    X=Matrix{T}(I,n,n)
+	    for k=2:n
+	        for i=k-1:-1:1
+	            r=(conj(A[i,i+1:k])⋅X[i+1:k,k])
+	            a=-A[i,i]
+	            b=A[k,k]
+	            X[i,k]=sylvester(a,b,-r)
+	        end
+	    end
+	    X
+	end
+	
+	function LinearAlgebra.eigen(A₀::AbstractMatrix{T}, standardform::Bool=true, tol::Real=1e-12) where T<:Quaternion
+		# Eigenvalue decomposition of the matrix A₀ of Quaternions, Q'*A₀*Q=Λ.
+		#  This is implementation of Algorithm A5 from [Appendix, BGBM89]
+		A=copy(A₀)
+		# Reduction to Hessenberg form
+		Q,H=hessenberg(A)
+		# Schur factorization
+		R,Q₁=schur(H,tol)
+		Q*=Q₁
+		# Computing eigenvectors by solving Sylvester equation
+		X=sylvester(R)
+		λ=diag(R)
+		Q*=X
+		# Eigenvalues in the standard form
+		if standardform
+			for i=1:length(λ)
+				z=standardformx(λ[i])
+		    	λ[i]=z\(λ[i]*z)
+				Q[:,i]*=z
+			end
+		end
+		return Eigen(λ,Q)
+	end
+end
+
 # ╔═╡ 15b01358-f35b-4d43-b953-d0f046760db6
 function Power(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) where T<:Number
 	# Right eigenvalue and eigenvector of a (quaternion) Arrow matrix
@@ -805,112 +1150,6 @@ function Power(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) whe
 	println("Power ", steps)
     ν, y, steps
 end
-
-# ╔═╡ 97e96f57-c7c7-4f79-b846-955294f59e61
-function Dx(x::Vector{T},τ::T) where T<:Number
-	# computes Diagonal(D) s.t. Dx=x*τ
-	n=length(x)
-	d=Vector{T}(undef,n)
-	for i=1:n
-		d[i]=x[i]*τ/x[i]
-	end
-	return Diagonal(d)
-end
-
-# ╔═╡ 9f7e3812-4992-4561-a44b-28889448ef87
-function InvIt(A::AbstractMatrix{T}, u₀::Vector{T}, standardform::Bool=true, tol::Real=1e-12) where T<:Number
-	# Right eigenvalue and eigenvector of a (quaternion) Arrow matrix
-	u=normalize(u₀,1)
-	steps=1
-	λ=zero(T)
-	for i=1:100
-		v=\(A,u)
-		λ=v[findmax(abs,v)[2]]
-		u=v./λ
-    	if norm(A*u-u./λ,Inf)/abs(λ)<tol
-			break
-		end
-		steps+=1
-	end
-    ν=one(T)/λ
-	normalize!(u)
-	println("InvIt v ", steps)
-	if standardform 
-		z=standardformx(ν)
-    	ν=z\(ν*z)
-		if T∈(QuaternionF64,Quaternion{BigFloat})
-			ν=Quaternion(ν.s,ν.v1,0.0,0.0)
-		end
-		u.*=z
-	end
-    return ν,u, steps
-end
-
-# ╔═╡ eddb1ce6-531c-438e-9b3d-91de08ed5b0f
-function InvIt(A::AbstractMatrix{T}, u₀::Vector{T}, τ₀::T, standardform::Bool=true, tol::Real=1e-12) where T<:Number
-	# Right eigenvalue and eigenvector of a (quaternion) Arrow matrix
-	τ=τ₀
-	u=u₀
-	steps=1
-	λ=zero(T)
-	for i=1:2
-		D=Dx(u,τ)
-		λ,v,st=InvIt(A-D,u)
-		println(" check ",Float64(norm((A-D)*v-v*λ)/abs(λ)))
-		u=v
-		τ+=λ
-    	if norm(A*u-u*τ)/abs(τ)<tol
-			break
-		end
-		steps+=1
-	end
-    # ν=one(T)/λ
-	normalize!(u)
-	ν=τ
-	println("InvIt vt ", steps)
-	if standardform 
-		z=standardformx(ν)
-    	ν=z\(ν*z)
-		if T∈(QuaternionF64,Quaternion{BigFloat})
-			ν=Quaternion(ν.s,ν.v1,0.0,0.0)
-		end
-		u.*=z
-	end
-    return ν,u, steps
-end
-
-# ╔═╡ ac150a75-11ff-44df-b230-e06b05f8011b
-function InvIt1(A::AbstractMatrix{T}, u₀::Vector{T}, τ::T, standardform::Bool=true, tol::Real=1e-12) where T<:Number
-	# Right eigenvalue and eigenvector of a (quaternion) Arrow matrix
-	# Uses inverse iteration on A-D where D is a diagonal computed by Dx()
-	x=x₀
-	D=Dx(x,τ)
-	y=\(A,D,x)
-	normalize!(y)
-	ν=zero(T)
-    steps=1
-    while norm(A*y-y*ν)/abs(ν)>tol && steps<10
-		x=y
-        y=\(A,D,x)
-		normalize!(y)
-        ν=y⋅(A*y)
-		steps+=1
-		println("InvIt n ", norm(A*y-y*ν)/abs(ν))
-	end
-	println("InvIt ", steps)
-	if standardform 
-		z=standardformx(ν)
-    	ν=z\(ν*z)
-		ν=Quaternion(ν.s,ν.v1,0.0,0.0)
-		y.*=z
-	end
-    return ν,y,steps
-end
-
-# ╔═╡ 488877d8-1dd7-43a0-97e1-ce12c2555f5d
-md"
-## `RQI()` and `RQIjd()`
-"
 
 # ╔═╡ 7570c157-1f63-47e1-9d31-c2a690e5f55b
 function RQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) where T<:Number
@@ -946,71 +1185,73 @@ function RQI(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) where
     return ν, y, steps
 end
 
-# ╔═╡ 4b607966-7b18-4f76-8f8a-35ce3dbbc22e
-function JDC!(A::AbstractMatrix{T}, u::Vector{T}, θ::AbstractFloat) where T<:Number
-	# Jacobi Davidson Correction
-	r=-A*u+u*θ
-	α=-(u⋅\(A,θ,u)) \ (u⋅\(A,θ,r))
-	z=r+u*α
-	t=\(A,θ,z)
-	u+=t
-	normalize!(u)
-	return u
-end
-
-# ╔═╡ e79add46-2c6b-45f9-97da-0ee8f90a47dd
-function JDC(A::AbstractMatrix{T}, u::Vector{T}, θ::AbstractFloat) where T<:Number
-	# Jacobi Davidson Correction
-	r=-A*u+u*θ
-	α=-(u⋅\(A,θ,u)) \ (u⋅\(A,θ,r))
-	z=r+u*α
-	t=\(A,θ,z)
-	y=u+t
-	normalize!(y)
-	return y
-end
-
-# ╔═╡ 7903616a-51f6-43d9-996f-773c4891e15a
-function RQIjd(A::AbstractMatrix{T},standardform::Bool=true,tol::Real=1e-12) where T<:Number
+# ╔═╡ 86221eaf-9c7e-4171-b29e-66496a1a55d1
+function RQIds(A::AbstractMatrix{T}, standardform::Bool=true, tol::Real=1e-12) where T<:Number
 	# Right eigenvalue and eigenvector of a (quaternion) Arrow matrix 
-	# using Rayleigh Quotient Iteration with real shifts
-	# Solves the system instead of computing the inverse, uses standard form and
-	# Jacobi Davidson correction
+	# using Rayleigh Quotient Iteration and double-shift approach
+	# Solves the system instead of computing the inverse
 	n=size(A,1)
 	x=normalize!(ones(T,n))
-	# Only real shifts
-    ν=x⋅(A*x)
-	μ=real(ν)
-	y=\(A,μ,x)
-	normalize!(y)
-	ν=y⋅(A*y)
-    steps=1
-	ν₀=zero(T)
-    while norm(A*y-y*ν)/abs(ν)>tol && steps<2000
-	# while abs(ν-ν₀)>tol && steps<10000	
-		x=y
-		μ=real(ν)
-		y=\(A,μ,x)
-		normalize!(y)
-		θ=real(y⋅(A*y))
-		# Jacobi Davidson Correction
-		# JDC!(A,y,θ)
-		y=JDC(A,y,θ)
-		ν=y⋅(A*y)
-		# End Jacobi Davidson
+	# Start
+	μ=x⋅(A*x)
+	α=T
+	β=T
+    steps=0
+	residual=norm(A*x-x*μ)/abs(μ)
+    while residual>tol && steps<100
+		# Double shifts
+		α=μ+conj(μ)
+		β=μ*conj(μ)
+		# Direct implementation of double shift is O(n^3).
+		# y=(A*A-α*A+β*I)\x
+		# This is O(n^2)
+		x=\(A,α,β,x)
+		normalize!(x)
+		# println("step = ",steps, " μ = ", μ)
+		μ=x⋅(A*x)
+		residual=norm(A*x-x*μ)/abs(μ)
+		# println("residual = ", norm(A*x-x*μ)/abs(μ) )
         steps+=1
     end
 	if standardform
-		z=standardformx(ν)
-    	ν=z\(ν*z)
-		if T∈(QuaternionF64,Quaternion{BigFloat})
-			ν=Quaternion(ν.s,ν.v1,0.0,0.0)
-		end
-		y.*=z
+		z=standardformx(μ)
+    	μ=z\(μ*z)
+		x.*=z
 	end
-	
-	println("RQIjd ",steps, " ",Float64(norm(A*y-y*ν)/abs(ν)))
-    return ν, y, steps
+	# println("RQIds steps= ",steps," residual = ", residual)
+    return μ, x, steps
+end
+
+# ╔═╡ 6aa6a509-b3b3-44b4-bcad-5b0b332f3ac2
+function RQIds(A::AbstractMatrix{T},μ::T, x::Vector{T},standardform::Bool=true,tol::Real=1e-12) where T<:Quaternion
+	# Right eigenvalue and eigenvector of a (quaternion) Arrow matrix 
+	# using Rayleigh Quotient Iteration and double-shift approach
+	# Solves the system instead of computing the inverse.
+	# Uses nearly optimal shift and optimal starting vector from previous 
+	# computations. It is used for correction.
+	n=size(A,1)
+	# Start
+	α=T
+	β=T
+    steps=0
+	residual=norm(A*x-x*μ)/abs(μ)
+    while residual>tol && steps<20
+		α=μ+conj(μ)
+		β=μ*conj(μ)
+		x=\(A,α,β,x)
+		normalize!(x)
+		# println("step = ",steps, " μ = ", μ)
+		μ=x⋅(A*x)
+		residual=norm(A*x-x*μ)/abs(μ)
+        steps+=1
+    end
+	if standardform
+		z=standardformx(μ)
+    	μ=z\(μ*z)
+		x.*=z
+	end
+	# println("RQIds! steps= ",steps," residual= ", residual)
+    return μ, x
 end
 
 # ╔═╡ ce762b41-6522-46d1-a332-eca6756d9687
@@ -1024,29 +1265,26 @@ md"
 "
 
 # ╔═╡ 8d76c56a-60e8-4356-a0e5-3c41d01bc530
-begin
-	import LinearAlgebra.eigvecs
-	function eigvecs(A::Arrow{T}, λ₁::Vector{T}, ψ₁::Vector{T}) where T<:Number
-		# Eigenvectors of a (quaternionic) Arrow given eigenvalues λ₁ and last
-		# elements ψ₁
-		n=length(λ₁)
-		# Create matrix for eigenvectors
-		U=Matrix{T}(undef,n,n)
-		# Temporary vector
-		u=Vector{T}(undef,n)
-		for i=1:n
-			# Compute α=ρ*y'*u from the first element
-			ψ=ψ₁[i]
-			λ=λ₁[i]
-			u[n]=ψ
-			for k=1:n-1
-				u[k]=sylvester(A.D[k],-λ,A.u[k]*ψ)
-			end
-			normalize!(u)
-			U[:,i]=u
+function LinearAlgebra.eigvecs(A::Arrow{T}, λ₁::Vector{T}, ψ₁::Vector{T}) where T<:Number
+	# Eigenvectors of a (quaternionic) Arrow given eigenvalues λ₁ and last
+	# elements ψ₁
+	n=length(λ₁)
+	# Create matrix for eigenvectors
+	U=Matrix{T}(undef,n,n)
+	# Temporary vector
+	u=Vector{T}(undef,n)
+	for i=1:n
+		# Compute α=ρ*y'*u from the first element
+		ψ=ψ₁[i]
+		λ=λ₁[i]
+		u[n]=ψ
+		for k=1:n-1
+			u[k]=sylvester(A.D[k],-λ,A.u[k]*ψ)
 		end
-		return U
+		normalize!(u)
+		U[:,i]=u
 	end
+	return U
 end
 
 # ╔═╡ 7e6dcca5-e545-4822-8e49-634514fd60bb
@@ -1062,197 +1300,226 @@ md"
 # ╔═╡ 8d04d6ae-17bf-447b-87e3-f7702fc8007c
 begin
 	T=QuaternionF64
-	n=10
-	Esolver=RQI
+	n=100
+	Esolver=RQIds
 	tol=1e-12
 	matrixtype="Arrow"
 	numberofexperiments=10
 end
 
+# ╔═╡ 1319217e-fa81-4188-992f-95f5ac26afe7
+x=randn(T,n);
+
 # ╔═╡ 720abc22-e9ec-48c4-a543-c83fd850b56e
-begin
-	import LinearAlgebra.eigvals
-	function eigvals(A₀::Arrow{T}, standardform::Bool=true,tol::Real=1e-12) where T<:Number
-		# Power iteration and Wielandt deflation to compute eigenvalues of 
-		# quaternionic Arrow matrix
-		A=A₀
-		n=size(A,1)
-		# Create vector for eigenvalues
-		λ=Vector{T}(undef,n)
-		# First eigenpair
-		λ[1],x,steps=Esolver(A,standardform,tol)
-		for i=2:n-1
-			# Deflated matrix
-			g=x[1]\A.u[1]
-			w=A.u[2:end]-x[2:end-1]*g
-			α=A.α-x[end]*g
-			A=Arrow(A.D[2:end],w,A.v[2:end],α,length(w)+1)
-			# Eigenpair
-			λ[i],x,steps=Esolver(A,standardform,tol)
-		end
-		# Last eigenvalue
-		ν=A.α-x[2]*(x[1]\A.u[1])
-		z=[one(T)]
-		if standardform
-			z=standardformx(ν)
-	    	ν=z\(ν*z)
-			if T∈(QuaternionF64,Quaternion{BigFloat})
-				ν=Quaternion(ν.s,ν.v1,0.0,0.0)
-			end
-		end
-		λ[n]=ν
-		return λ
+function LinearAlgebra.eigvals(A₀::Arrow{T}, standardform::Bool=true,tol::Real=1e-12) where T<:Number
+	# Power iteration and Wielandt deflation to compute eigenvalues of 
+	# quaternionic Arrow matrix
+	A=A₀
+	n=size(A,1)
+	# Create vector for eigenvalues
+	λ=Vector{T}(undef,n)
+	# First eigenpair
+	λ[1],x,steps=Esolver(A,standardform,tol)
+	for i=2:n-1
+		# Deflated matrix
+		g=x[1]\A.u[1]
+		w=A.u[2:end]-x[2:end-1]*g
+		α=A.α-x[end]*g
+		A=Arrow(A.D[2:end],w,A.v[2:end],α,length(w)+1)
+		# Eigenpair
+		λ[i],x,steps=Esolver(A,standardform,tol)
 	end
+	# Last eigenvalue
+	ν=A.α-x[2]*(x[1]\A.u[1])
+	z=[one(T)]
+	if standardform
+		z=standardformx(ν)
+	    ν=z\(ν*z)
+	end
+	λ[n]=ν
+	return λ
 end
 
-# ╔═╡ e5ab4bf6-4d90-4dd5-9dc6-82adb68ce753
-begin
-	import LinearAlgebra.eigen
-	function eigen(A₀::Arrow{T}, standardform::Bool=true,tol::Real=1e-12) where T<:Number
-		# Power iteration and Wielandt deflation to compute eigenvalues of 
-		# quaternionic Arrow matrix
-		println("     Tolerance ",Float64(tol)," ",T)
-		A=A₀
-		n=size(A,1)
-		# Create arrays for eigenvalues, first element and eigenvectors
-		steps=zeros(Int,n)
-		λ=Vector{T}(undef,n)
-		γ=Vector{T}(undef,n)
-		# First element of A.x
-		χ=Vector{T}(undef,n)
-		# x₁=Vector{T}(undef,n)
-		# First and last elements of current u
-		ν=Vector{T}(undef,n)
-		ψ=Vector{T}(undef,n)
-		# Eigenvector matrix
-		U=zeros(T,n,n)
-	
-		# First eigenvalue
-		println("Eigenvalue 1")
-		λ[1],u,steps[1]=Esolver(A,true,tol)
-		γ[1]=u[1]*λ[1]/u[1]
-		# U[:,1]=u
-		ν[1]=u[1]
-		χ[1]=A.u[1]
-	    ψ[1]=u[n]
-		for i=2:n-1
-			# Deflated matrix
-			g=u[1]\A.u[1]
-			w=A.u[2:end]-u[2:end-1]*g
-			# Compute the deflated matrix ̂A
-			α=A.α-u[end]*g
-			A=Arrow(A.D[2:end],w,A.v[2:end],α,length(w)+1)
-			# Eigenpair
-			println("Eigenvalue ",i)
-			# Update and store γᵢ, νᵢ, χᵢ, and ψᵢ according to Lemma 4
-			λ[i],u,steps[i]=Esolver(A,true,tol)
-			γ[i]=u[1]*λ[i]/u[1]
-			ν[i]=u[1]
-			χ[i]=A.u[1]
-			ψ[i]=u[end]
-			# println(u[1],A.ρ*A.v'*u)
+# ╔═╡ 0b22e485-f5bd-4282-9061-4c3639019e7c
+function LinearAlgebra.eigen(A₀::Arrow{T}, standardform::Bool=true,tol::Real=1e-12) where T<:Number
+	# RQIds and Wielandt deflation to compute eigenvalues of 
+	# quaternionic Arrow matrix
+	# println("     Tolerance ",Float64(tol)," ",T)
+	A=A₀
+	n=size(A,1)
+	# Create arrays for eigenvalues, first element and eigenvectors
+	steps=zeros(Int,n)
+	λ=Vector{T}(undef,n)
+	γ=Vector{T}(undef,n)
+	# First element of A.x
+	χ=Vector{T}(undef,n)
+	# First and last elements of current u
+	ν=Vector{T}(undef,n)
+	ψ=Vector{T}(undef,n)
+	# Eigenvector matrix
+	U=zeros(T,n,n)
+
+	# First eigenvalue
+	# println("Eigenvalue 1")
+	λ[1],u,steps[1]=Esolver(A,false,tol)
+	γ[1]=u[1]*λ[1]/u[1]
+	# U[:,1]=u
+	ν[1]=u[1]
+	χ[1]=A.u[1]
+	ψ[1]=u[n]
+	for i=2:n-1
+		# Deflated matrix
+		g=u[1]\A.u[1]
+		w=A.u[2:end]-u[2:end-1]*g
+		α=A.α-u[end]*g
+		A=Arrow(A.D[2:end],w,A.v[2:end],α,length(w)+1)
+		# Eigenpair
+		# println("Eigenvalue ",i)
+		λ[i],u,steps[i]=Esolver(A,false,tol)
+		γ[i]=u[1]*λ[i]/u[1]
+		ν[i]=u[1]
+		χ[i]=A.u[1]
+		ψ[i]=u[end]
+		# println(u[1],A.ρ*A.v'*u)
+	end
+	# Last eigenvalue
+	μ=A.α-u[2]*(u[1]\A.u[1])
+	z=one(T)
+
+	λ[n]=μ
+	ψ[n]=z
+
+	# Compute the eigenvectors, bottom-up, the formulas are derived 
+	# using (15) and known first and last elements of eigenvectors
+
+	for i=n-1:-1:1
+		for j=i+1:n
+			ζ=sylvester(γ[i],-λ[j],χ[i]*ψ[j])
+			ν[j]=ζ
+			ψ[j]=ψ[j]+ψ[i]*(ν[i]\ ζ)
 		end
-		# Compute and store the last eigenvalue in standard form
-		μ=A.α-u[2]*(u[1]\A.u[1])
-		z=[one(T)]
-		if standardform
+	end
+	U=eigvecs(A₀,λ,ψ)
+	
+	# Corrections - few steps of double-shift RQI n the original matrix using 
+	# computed eigenvalues and eigenvectors
+	for i=1:n
+		# println(" Correction ",i)
+		λ[i],U[:,i]=RQIds(A₀,λ[i],U[:,i],false, tol)
+	end
+		
+	if standardform
+		for i=1:n
+			μ=λ[i]
 			z=standardformx(μ)
 	    	μ=z\(μ*z)
-			if T∈(QuaternionF64,Quaternion{BigFloat})
-				μ=Quaternion(μ.s,μ.v1,0.0,0.0)
-			end
+			λ[i]=μ
+			U[:,i].*=z
 		end
-		λ[n]=μ
-		ψ[n]=z
-	
-		# Compute the eigenvectors, bottom-up, the formulas are derived 
-		# using (15) and known first and last elements of eigenvectors
-			
-		for i=n-1:-1:1
-			for j=i+1:n
-				# Solve the Sylvester equation γᵢζ-ζλⱼ=-χᵢψⱼ for ζ
-				ζ=sylvester(γ[i],-λ[j],χ[i]*ψ[j])
-				# Update νⱼ and ψⱼ, the first and the last element of the 
-				# eigenvector of the super matrix, respectively:
-				ν[j]=ζ
-				ψ[j]=ψ[j]+ψ[i]*(ν[i]\ ζ)
-			end
-		end
-		# Reconstruct all eigenvectors from the computed eigenvalues 
-		# and respective first and last elements using (12)
-		U=eigvecs(A₀,λ,ψ)
-		return Eigen(λ,U), sum(steps)/(n-1)
 	end
+	return Eigen(λ,U), sum(steps)/(n-1)
 end
 
 # ╔═╡ de95310d-ee54-4357-a5d3-ddb69e331f9e
 begin
 	# Arrow
-	Random.seed!(5237) # 5497
+	Random.seed!(5497) # 5497  5237
 	Times=Vector(undef,numberofexperiments)
+	TimesQR=Vector(undef,numberofexperiments)
 	Errorbounds=Vector(undef,numberofexperiments)
 	Errors=Vector(undef,numberofexperiments)
+	ErrorsQR=Vector(undef,numberofexperiments)
 	Residuals=Vector(undef,numberofexperiments)
+	ResidualsB=Vector(undef,numberofexperiments)
+	ResidualsQR=Vector(undef,numberofexperiments)
 	Meansteps=Vector(undef,numberofexperiments)
 	a=randperm(10*n)[1:n-1]
 	f1(A) = [norm(A[:,i]) for i=1:size(A,2)]
 	for l=1:numberofexperiments
 		println("     Experiment ",l)
-		# Generate an Arrow matrix
+		# Generate the Arrow matrix
+		# D₀=randn(T,n-1).* a
 		D₀=[Quaternion(rand().*a[i],randn(),randn(),randn()) for i=1:n-1]
 		u₀=randn(T,n-1)
 		v₀=randn(T,n-1)
 		# v₀=ones(T,n-1)
 		α₀=randn(T)
+		if matrixtype=="Hermitian"
+			D₀=T.(real(D₀))
+			v₀=u₀
+			α₀=T(real(α₀))
+		end
 		global A=Arrow(D₀,u₀,v₀,α₀,n)
-		# Compute the eigenvalue decomposition
-		Times[l]=@elapsed global E,mean=eigen(A,true,tol)
+		# Compute the eigenvalue decomposition using fast Arrowhead eigensolver
+		Times[l]=@elapsed E,mean=eigen(A,true,tol)
 		Meansteps[l]=mean
+		# Residuals[l]=opnorm(Matrix(A)*E.vectors-E.vectors*Diagonal(E.values),1)
 		Residuals[l]=maximum(f1(Matrix(A)*E.vectors-E.vectors*Diagonal(E.values))./abs.(E.values))
 		Errorbounds[l]=Residuals[l]*cond(E.vectors)
 		# Eigenvalue decomposition using BigFloat()
 		if n<25 
 			S=T==QuaternionF64 ? Quaternion{BigFloat} : Complex{BigFloat}
 			Ab=Arrow(map.(S,(A.D,A.u,A.v,A.α))...,A.i)
-			global Eb,meanb=eigen(Ab,true,BigFloat(1e-18))
+			Eb,meanb=eigen(Ab,true,BigFloat(1e-18))
+			ResidualsB[l]=maximum(f1(Matrix(Ab)*Eb.vectors-Eb.vectors*Diagonal(Eb.values))./abs.(Eb.values))
 			Es=sortperm(real(E.values))
 			Ebs=sortperm(real(Eb.values))
+			# Errors[l]=norm(E.values[Es]-Eb.values[Ebs],Inf)
 			Errors[l]=norm(abs.(E.values[Es]-Eb.values[Ebs])./abs.(Eb.values[Ebs]),Inf)
+		end
+		# Eigenvalue decomposition using general eigensolver
+		TimesQR[l]=@elapsed Eg=eigen(Matrix(A))
+		# Residuals[l]=opnorm(Matrix(A)*E.vectors-E.vectors*Diagonal(E.values),1)
+		ResidualsQR[l]=maximum(f1(Matrix(A)*Eg.vectors-Eg.vectors*Diagonal(Eg.values))./abs.(Eg.values))
+		if n<25
+			Egs=sortperm(real(Eg.values))
+			ErrorsQR[l]=norm(abs.(Eg.values[Egs]-Eb.values[Ebs])./abs.(Eb.values[Ebs]),Inf)
 		end
 	end
 end
 
-# ╔═╡ 7af63d6a-7021-4148-9d5b-aeb5e8b3a644
-E.values-Eb.values
+# ╔═╡ 680c6d7b-e033-4583-935b-aa6d9c548b65
+@time inv(A)
+
+# ╔═╡ 9a7559d6-3d2e-4030-b01b-be92a5d5d038
+@time \(A,x)
+
+# ╔═╡ a81c0ff6-ed54-49e9-9a06-4a6b73af51a3
+begin
+	μ=randn(T)
+	α=μ+conj(μ)
+	β=μ*conj(μ)
+	@time \(A,α,β,x)
+end
+
+# ╔═╡ 24f0592e-cd72-4713-b08b-553565719f86
+@time eigen(A)
+
+# ╔═╡ c283ccd8-e866-4f71-9cc0-378ca5f21eb5
+@time RQIds(A)
 
 # ╔═╡ 41331780-289f-44e8-a302-73d0f78dfe84
 scatter(Meansteps)
 
-# ╔═╡ 49cfc6d0-e444-4889-a898-2a80f9c3b536
-begin
-	# Absolute values of eigenvalues
-	if Esolver==Power
-		a1=abs.(E.values)
-		# Estimate of the number of iterations needed for the power method
-		@show Int.(ceil.(log(tol)./log.(a1[2:end]./a1[1:end-1])))
-	end
-end
-
 # ╔═╡ 99ebd4df-7359-44d4-a8e2-425c0ad13f61
 scatter(Times,yaxis=:log10)
 
-# ╔═╡ e7d6e833-b9d6-432e-9389-b934d9626f2b
-E.values
-
-# ╔═╡ 5039aec7-5ce4-4915-8212-259b4fdd20c5
+# ╔═╡ 43e75924-628a-4d26-bdb6-71ebaa06962c
 begin
 	scatter(Errorbounds, label="Error bounds",marker=:square,mc=:green,ms=3)
-	scatter!(Residuals,yaxis=:log10,title="Matrix=$(matrixtype), n=$(n), method=$(Esolver)",titlefontsize=12,xlabel="Experiment number",label="Residuals",mc=:blue,ms=4, xticks=0:1:10)
-	# ,yticks=[1e-14,1e-13,1e-12,1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3]
+	
+	scatter!(Residuals,yaxis=:log10,title="Matrix=$(matrixtype), n=$(n), method=$(Esolver)",titlefontsize=12,xlabel="Experiment number",label="Residuals",mc=:red,ms=4, xticks=0:1:10)
+	
 	if n<30
 		scatter!(Errors, label="Errors",marker=:diamond,mc=:red,ms=4)
 	end
-	scatter!()
+	
+	scatter!(ResidualsQR,yaxis=:log10,title="Matrix=$(matrixtype), n=$(n), method=$(Esolver)",titlefontsize=12,xlabel="Experiment number",label="ResidualsQR",mc=:blue,ms=4, xticks=0:1:10)
+	# ,yticks=[1e-14,1e-13,1e-12,1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3]
+	if n<30
+		scatter!(ErrorsQR, label="ErrorsQR",marker=:diamond,mc=:blue,ms=4)
+	end
+	scatter!(legend=:topleft)
 end
 
 # ╔═╡ 36111a29-dbf8-4268-9059-1ee290fecf27
@@ -1261,16 +1528,13 @@ filename=matrixtype*"_"*"$(n)"*"_"*"$(Esolver)"*"_$(-Int(log10(tol)))_.jld2"
 
 # ╔═╡ ef341378-db5b-4745-9e74-dbd261f04972
 # Save the results
-@save filename Meansteps Times Residuals Errorbounds Errors
+@save filename Meansteps Times TimesQR Residuals ResidualsQR Errorbounds Errors ErrorsQR
+
+# ╔═╡ 4b442542-80d8-4e12-ac92-bf65c60638c9
+E,s=eigen(A)
 
 # ╔═╡ b04cacc7-26d8-4ffd-bb7c-e3a2f93415a7
 scatter([Complex(E.values[i].s,E.values[i].v1) for i=1:n])
-
-# ╔═╡ e8553360-b92b-4403-aab8-c87053826075
-k=8
-
-# ╔═╡ d027ed14-bffb-4318-973f-e514e8a07cb0
-norm(A*E.vectors[:,k]-E.vectors[:,k]*E.values[k])/abs(E.values[k])
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2424,10 +2688,14 @@ version = "1.4.1+1"
 # ╟─8503c651-2bd3-43f2-9d4c-959962606ff5
 # ╟─47f842fa-063d-4b30-a734-3f7d825b1314
 # ╟─b299fcf7-7ced-45d1-a55c-74482ecb0c60
-# ╟─f3a47c9d-c3ba-4056-a3d7-bb4050b3175c
-# ╟─4701622a-8d1c-47aa-a30d-7b0e61d378d4
+# ╟─82c8a221-3125-42a1-a033-02408688b6ae
+# ╟─09fe2fc2-5ea7-428d-b0b4-f11221fbd6d3
+# ╟─02afde06-04e6-44ae-b8c4-3e8e00d5b7cc
+# ╟─9d38f85e-058a-426c-ae71-2f664e8357a2
 # ╟─f6769f8f-19ad-47c5-a1ec-2e3c780f6cd7
 # ╟─24724b41-f108-4dc7-b6dd-193a3e39bc37
+# ╟─a341e994-50a7-4848-8ec8-8794a89a9063
+# ╟─d3046577-b251-45b0-a743-a9970937811d
 # ╟─22c35821-40f4-4c64-90b3-2ea2ce4e651c
 # ╟─fa8ead94-9787-462b-9f41-47fcb41a1a17
 # ╟─ff113c87-a72d-4556-98f9-e1e42782a1e6
@@ -2446,38 +2714,40 @@ version = "1.4.1+1"
 # ╠═53a198ac-e7bf-4dc2-9ae3-67f94f15a694
 # ╟─322273eb-ca50-42b1-866a-3977700e9b63
 # ╠═2c23d735-c208-4a4c-b358-cf1a12a38ebe
-# ╟─1c0a18a8-8490-4790-b3b7-7f56edab3d43
-# ╠═15b01358-f35b-4d43-b953-d0f046760db6
 # ╟─124aea10-888e-438c-b0e0-82cdc1cf6dcb
 # ╠═77352b2b-3642-41fe-bc8a-7046b054608b
-# ╠═97e96f57-c7c7-4f79-b846-955294f59e61
-# ╠═9f7e3812-4992-4561-a44b-28889448ef87
-# ╠═eddb1ce6-531c-438e-9b3d-91de08ed5b0f
-# ╠═ac150a75-11ff-44df-b230-e06b05f8011b
+# ╠═680c6d7b-e033-4583-935b-aa6d9c548b65
+# ╠═1319217e-fa81-4188-992f-95f5ac26afe7
+# ╠═9a7559d6-3d2e-4030-b01b-be92a5d5d038
+# ╟─3566ab10-c23f-4f82-a4fb-2e3a134868a3
+# ╠═6f71be95-f2bc-4f47-bbca-89bf8cd53cab
+# ╟─1c0a18a8-8490-4790-b3b7-7f56edab3d43
+# ╠═15b01358-f35b-4d43-b953-d0f046760db6
 # ╟─488877d8-1dd7-43a0-97e1-ce12c2555f5d
 # ╠═7570c157-1f63-47e1-9d31-c2a690e5f55b
-# ╠═7903616a-51f6-43d9-996f-773c4891e15a
-# ╠═4b607966-7b18-4f76-8f8a-35ce3dbbc22e
-# ╠═e79add46-2c6b-45f9-97da-0ee8f90a47dd
+# ╠═12178ddc-c0bc-45cd-8c45-299b3ff46029
+# ╠═b909e897-bb2f-4171-9e43-caa326bae66d
+# ╠═b2d0628a-35c8-4d8e-ba25-480173557229
+# ╠═a81c0ff6-ed54-49e9-9a06-4a6b73af51a3
+# ╠═86221eaf-9c7e-4171-b29e-66496a1a55d1
+# ╠═6aa6a509-b3b3-44b4-bcad-5b0b332f3ac2
 # ╟─ce762b41-6522-46d1-a332-eca6756d9687
 # ╠═720abc22-e9ec-48c4-a543-c83fd850b56e
 # ╟─98d415a5-1cdd-48ae-bad2-46230a7df2b9
 # ╠═8d76c56a-60e8-4356-a0e5-3c41d01bc530
 # ╟─7e6dcca5-e545-4822-8e49-634514fd60bb
-# ╠═e5ab4bf6-4d90-4dd5-9dc6-82adb68ce753
+# ╠═0b22e485-f5bd-4282-9061-4c3639019e7c
 # ╟─aefbdfff-3cb2-41a4-89be-67915bfb240b
 # ╠═8d04d6ae-17bf-447b-87e3-f7702fc8007c
 # ╠═de95310d-ee54-4357-a5d3-ddb69e331f9e
-# ╠═7af63d6a-7021-4148-9d5b-aeb5e8b3a644
+# ╠═24f0592e-cd72-4713-b08b-553565719f86
+# ╠═c283ccd8-e866-4f71-9cc0-378ca5f21eb5
 # ╠═41331780-289f-44e8-a302-73d0f78dfe84
-# ╠═49cfc6d0-e444-4889-a898-2a80f9c3b536
 # ╠═99ebd4df-7359-44d4-a8e2-425c0ad13f61
-# ╠═e7d6e833-b9d6-432e-9389-b934d9626f2b
-# ╠═5039aec7-5ce4-4915-8212-259b4fdd20c5
+# ╠═43e75924-628a-4d26-bdb6-71ebaa06962c
 # ╠═36111a29-dbf8-4268-9059-1ee290fecf27
 # ╠═ef341378-db5b-4745-9e74-dbd261f04972
+# ╠═4b442542-80d8-4e12-ac92-bf65c60638c9
 # ╠═b04cacc7-26d8-4ffd-bb7c-e3a2f93415a7
-# ╠═e8553360-b92b-4403-aab8-c87053826075
-# ╠═d027ed14-bffb-4318-973f-e514e8a07cb0
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

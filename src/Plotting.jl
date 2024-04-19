@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.36
+# v0.19.40
 
 using Markdown
 using InteractiveUtils
@@ -32,6 +32,7 @@ begin
 	plt=Vector{Any}(undef,k)
 	MeanMeansteps=Vector{Int}(undef,k)
 	MeanTimes=Vector{Float64}(undef,k)
+	MeanTimesQR=Vector{Float64}(undef,k)
 	Nk=Vector{String}(undef,k)
 	Kk=Vector{String}(undef,k)
 end
@@ -39,14 +40,14 @@ end
 # ╔═╡ 78d80766-ced5-4407-8888-d2a962c50637
 begin
 	# n=10
-	filename[1]="Arrow_10_Power_12_.jld2"
-	filename[2]="Arrow_10_RQI_12_.jld2"
-	filename[3]="Arrow_20_RQI_12_.jld2"
-	filename[4]="Arrow_40_RQI_12_.jld2"
-	filename[5]="DPRk_10_2_Power_12_.jld2"
-	filename[6]="DPRk_10_2_RQI_12_.jld2"
-	filename[7]="DPRk_20_2_RQI_12_.jld2"
-	filename[8]="DPRk_40_3_RQI_12_.jld2"
+	filename[1]="Arrow_10_RQIds_12_.jld2"
+	filename[2]="Arrow_20_RQIds_12_.jld2"
+	filename[3]="Arrow_40_RQIds_12_.jld2"
+	filename[4]="Arrow_100_RQIds_12_.jld2"
+	filename[5]="DPRk_10_2_RQIds_12_.jld2"
+	filename[6]="DPRk_20_2_RQIds_12_.jld2"
+	filename[7]="DPRk_40_3_RQIds_12_.jld2"
+	filename[8]="DPRk_100_4_RQIds_12_.jld2"
 end
 
 # ╔═╡ c1869f1d-4aac-42ec-898f-19860c59fdd3
@@ -58,12 +59,14 @@ v=parse(Int,n)
 # ╔═╡ 0d8adf54-968e-479d-aca0-2091810f28b6
 for i=1:4
 	(matrixtype,n,Esolver,tol,ext)=split(filename[i],"_")
-	@load filename[i] Meansteps Times Residuals Errorbounds Errors
-	scatter(Errorbounds, label="Error bounds", tickfontsize=16, legendfontsize=16, marker=:square,mc=:green,ms=5,title="Matrix=$(matrixtype), n=$(n), Esolver=$(Esolver)", titlefontsize=16, xlabel="Experiment number",xlabelfontsize=18)
-	scatter!(Residuals,yaxis=:log10,label="Residuals",mc=:blue,ms=7, xticks=0:1:10)
+	@load filename[i] Meansteps Times TimesQR Residuals ResidualsQR Errorbounds Errors ErrorsQR
+	scatter(Errorbounds, label="Error bounds", tickfontsize=16, legendfontsize=16, marker=:square,mc=:green,ms=5,title="Matrix=$(matrixtype), n=$(n)", titlefontsize=16, xlabel="Experiment number",xlabelfontsize=18)
+	scatter!(Residuals,yaxis=:log10,label="Residuals",mc=:red,ms=7, xticks=0:1:10)
+	scatter!(ResidualsQR,yaxis=:log10,label="ResidualsQR",mc=:blue,ms=7, xticks=0:1:10)
 	# ,yticks=[1e-14,1e-13,1e-12,1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3]
 	if parse(Int,n)<30
 		plt[i]=scatter!(Errors, label="Errors", marker=:diamond, mc=:red, ms=7,legend=false)
+		plt[i]=scatter!(ErrorsQR, label="ErrorsQR", marker=:diamond, mc=:blue, ms=7,legend=false)
 	else
 		plt[i]=scatter!(legend=false)
 	end
@@ -73,17 +76,20 @@ for i=1:4
 	Nk[i]=n
 	MeanMeansteps[i]=Int(ceil.(mean(Meansteps)))
 	MeanTimes[i]=round.(mean(Times),sigdigits=2)
+	MeanTimesQR[i]=round.(mean(TimesQR),sigdigits=2)
 end
 
 # ╔═╡ c565df20-b432-4e2b-be16-1d6fc39e9af0
 for i=5:8
 	(matrixtype,n,kk,Esolver,tol,ext)=split(filename[i],"_")
-	@load filename[i] Meansteps Times Residuals Errorbounds Errors
-	scatter(Errorbounds, label="Error bounds", tickfontsize=16, legendfontsize=16, marker=:square,mc=:green,ms=5,title="Matrix=$(matrixtype), n=$(n), k=$(kk), Esolver=$(Esolver)", titlefontsize=16, xlabel="Experiment number",xlabelfontsize=18)
-	scatter!(Residuals,yaxis=:log10,label="Residuals",mc=:blue,ms=7, xticks=0:1:10)
+	@load filename[i] Meansteps Times TimesQR Residuals ResidualsQR Errorbounds Errors ErrorsQR
+	scatter(Errorbounds, label="Error bounds", tickfontsize=16, legendfontsize=16, marker=:square,mc=:green,ms=5,title="Matrix=$(matrixtype), n=$(n), k=$(kk)", titlefontsize=16, xlabel="Experiment number",xlabelfontsize=18)
+	scatter!(Residuals,yaxis=:log10,label="Residuals",mc=:red,ms=7, xticks=0:1:10)
 	# ,yticks=[1e-14,1e-13,1e-12,1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,1e-4,1e-3]
+	scatter!(ResidualsQR,yaxis=:log10,label="ResidualsQR",mc=:blue,ms=7, xticks=0:1:10)
 	if parse(Int,n)<30
 		plt[i]=scatter!(Errors, label="Errors", marker=:diamond, mc=:red, ms=7,legend=false)
+		plt[i]=scatter!(ErrorsQR, label="ErrorsQR", marker=:diamond, mc=:blue, ms=7,legend=false)
 	else
 		plt[i]=scatter!(legend=false)
 	end
@@ -94,10 +100,11 @@ for i=5:8
 	Kk[i]=kk
 	MeanMeansteps[i]=Int(ceil.(mean(Meansteps)))
 	MeanTimes[i]=round.(mean(Times),sigdigits=2)
+	MeanTimesQR[i]=round.(mean(TimesQR),sigdigits=2)
 end
 
 # ╔═╡ 0a4dcc9a-0ff8-4756-90c3-736c727c2f75
-plt[8]
+plt[5]
 
 # ╔═╡ 08ffef6b-a369-41de-8c6e-d9d5ba6e33fd
 md"""
@@ -107,11 +114,12 @@ md"""
 # ╔═╡ 5e9541df-5589-401e-aa4b-766c39ddc38c
 md"""
 \begin{tabular}{c} Mean number of iterations\\\\ per eigenvalue\\\\
-\begin{tabular}{c|cc}
-\hline n & Power & RQI \\\\ \hline
-$(Nk[1]) & $(MeanMeansteps[1]) & $(MeanMeansteps[2]) \\\\
-$(Nk[3]) & -- & $(MeanMeansteps[3]) \\\\
-$(Nk[4]) & -- & $(MeanMeansteps[4])
+\begin{tabular}{c|c}
+\hline n & RQIds \\\\ \hline
+$(Nk[1]) & $(MeanMeansteps[1]) \\\\
+$(Nk[2]) & $(MeanMeansteps[2]) \\\\
+$(Nk[3]) & $(MeanMeansteps[3]) \\\\
+$(Nk[4]) & $(MeanMeansteps[4])
 \end{tabular}
 \end{tabular}
 
@@ -119,10 +127,11 @@ $(Nk[4]) & -- & $(MeanMeansteps[4])
 
 \begin{tabular}{c} \\\\ Mean total running time (sec) \\\\
 \begin{tabular}{c|cc}
-\hline n & Power & RQI \\\\ \hline
-$(Nk[1]) & $(MeanTimes[1]) & $(MeanTimes[2]) \\\\ 
-$(Nk[3]) & -- & $(MeanTimes[3]) \\\\
-$(Nk[4]) & -- & $(MeanTimes[4])
+\hline n & RQIds & QR \\\\ \hline
+$(Nk[1]) & $(MeanTimes[1]) & $(MeanTimesQR[1]) \\\\ 
+$(Nk[2]) & $(MeanTimes[2]) & $(MeanTimesQR[2]) \\\\
+$(Nk[3]) & $(MeanTimes[3]) & $(MeanTimesQR[3]) \\\\
+$(Nk[4]) & $(MeanTimes[4]) & $(MeanTimesQR[4])
 \end{tabular}
 \end{tabular}
 
@@ -131,22 +140,25 @@ $(Nk[4]) & -- & $(MeanTimes[4])
 # ╔═╡ 22530203-0bac-4c7b-b3c9-139d6db8c688
 md"""
 \begin{tabular}{c} Mean number of iterations\\\\ per eigenvalue\\\\
-\begin{tabular}{c|c|cc}
-\hline n & k & Power & RQI \\\\ \hline
-$(Nk[5]) & $(Kk[5]) & $(MeanMeansteps[5]) & $(MeanMeansteps[6]) \\\\
-$(Nk[7]) & $(Kk[7]) & -- & $(MeanMeansteps[7]) \\\\
-$(Nk[8]) & $(Kk[8]) & -- & $(MeanMeansteps[8])
+\begin{tabular}{cc|c}
+\hline 
+n & k & RQIds \\\\ \hline
+$(Nk[5]) & $(Kk[5]) & $(MeanMeansteps[5]) \\\\
+$(Nk[6]) & $(Kk[6]) & $(MeanMeansteps[6]) \\\\
+$(Nk[7]) & $(Kk[7]) & $(MeanMeansteps[7]) \\\\
+$(Nk[8]) & $(Kk[8]) & $(MeanMeansteps[8])
 \end{tabular}
 \end{tabular}
 
 &
 
 \begin{tabular}{c} \\\\ Mean total running time (sec) \\\\
-\begin{tabular}{c|c|cc}
-\hline n & k & Power & RQI \\\\ \hline
-$(Nk[5]) & $(Kk[5]) & $(MeanTimes[5]) & $(MeanTimes[6]) \\\\ 
-$(Nk[7]) & $(Kk[7]) & -- & $(MeanTimes[7]) \\\\
-$(Nk[8]) & $(Kk[8]) & -- & $(MeanTimes[8])
+\begin{tabular}{cc|cc}
+\hline n & k & RQIds & QR \\\\ \hline
+$(Nk[5]) & $(Kk[5]) & $(MeanTimes[5]) & $(MeanTimesQR[5]) \\\\
+$(Nk[6]) & $(Kk[6]) & $(MeanTimes[6]) & $(MeanTimesQR[6]) \\\\
+$(Nk[7]) & $(Kk[7]) & $(MeanTimes[7]) & $(MeanTimesQR[7]) \\\\
+$(Nk[8]) & $(Kk[8]) & $(MeanTimes[8]) & $(MeanTimesQR[8])
 \end{tabular}
 \end{tabular}
 
@@ -172,7 +184,7 @@ PlutoUI = "~0.7.53"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.0"
+julia_version = "1.10.2"
 manifest_format = "2.0"
 project_hash = "99a06d02024709427a4920581931b0f388e4d185"
 
@@ -258,7 +270,7 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.5+1"
+version = "1.1.0+0"
 
 [[deps.ConcurrentUtilities]]
 deps = ["Serialization", "Sockets"]
@@ -692,7 +704,7 @@ version = "1.3.5+1"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+2"
+version = "0.3.23+4"
 
 [[deps.OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
