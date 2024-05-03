@@ -1,6 +1,4 @@
-# MANAA
-Notebooks for the project "Matrix Algorithms in Noncommutative Associatve Algebras"
-
+# Matrix Algorithms in Noncommutative Associatve Algebras (MANAA)
 
 This repository contains software which accompanies and enhances research and publications within the project "Matrix Algorithms in Noncommutative Associatve Algebras" $\to$ [project's website](http://manaa.fesb.unist.hr/).
 
