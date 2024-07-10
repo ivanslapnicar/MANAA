@@ -6,9 +6,11 @@ Notebooks are written in [Julia](https://julialang.org) using [Pluto.jl](https:/
 
 ## Contents
 
-* [Fast.jl](https://github.com/ivanslapnicar/MANAA/) and [Fast.html](https://ivanslapnicar.github.io/MANAA/Fast.html) - files accompanying and enhancing the paper: Nevena Jakovčević Stor and Ivan Slapničar, _Fast determinants and inverses of arrowhead and diagonal-plus-rank-one matrices over associative fields_, submitted.
+* [Fast.jl](https://github.com/ivanslapnicar/MANAA/) and [Fast.html](https://ivanslapnicar.github.io/MANAA/Fast.html) - files accompanying and enhancing the paper: Nevena Jakovčević Stor and Ivan Slapničar, _Fast determinants and inverses of arrowhead and diagonal-plus-rank-one matrices over associative fields_, Axioms 2024, 13(6), Article ID 409.
 
-* [ED_Arrow.jl](https://github.com/ivanslapnicar/MANAA/), [ED_Arrow.html](https://ivanslapnicar.github.io/MANAA/ED_Arrow.html), [ED_DPRk.jl](https://github.com/ivanslapnicar/MANAA/), [ED_DPRk.html](https://ivanslapnicar.github.io/MANAA/ED_DPRk.html), [Plotting.jl](https://github.com/ivanslapnicar/MANAA/), and [Plotting.html](https://ivanslapnicar.github.io/MANAA/Plotting.html) - files accompanying and enhancing the paper: : Ivan Slapničar, Thaniporn Chaysri and Nevena Jakovčević Stor, _Fast Eigenvalue Decomposition of Arrowhead and Diagonal-Plus-Rank-k Matrices of Quaternions_, submitted.
+* [ED_Arrow.jl](https://github.com/ivanslapnicar/MANAA/), [ED_Arrow.html](https://ivanslapnicar.github.io/MANAA/ED_Arrow.html), [ED_DPRk.jl](https://github.com/ivanslapnicar/MANAA/), [ED_DPRk.html](https://ivanslapnicar.github.io/MANAA/ED_DPRk.html), [Plotting.jl](https://github.com/ivanslapnicar/MANAA/), and [Plotting.html](https://ivanslapnicar.github.io/MANAA/Plotting.html) - files accompanying and enhancing the paper: : Ivan Slapničar, Thaniporn Chaysri and Nevena Jakovčević Stor, _Fast Eigenvalue Decomposition of Arrowhead and Diagonal-Plus-Rank-k Matrices of Quaternions_, Mathematics 2024, 12(9), Article ID 1327.
+
+* [Osijek_2024.jl](https://github.com/ivanslapnicar/MANAA/), [Osijek_2024.html](https://ivanslapnicar.github.io/MANAA/ED_Arrow.html), [Sevilla_2024.jl](https://github.com/ivanslapnicar/MANAA/), and [Sevilla_2024.html](https://ivanslapnicar.github.io/MANAA/ED_DPRk.html), are presentations at the 8th Croatian Mathematical Congress, Osijek, July 2-5, 2024, and 9th European Congress of Mathematics, Sevilla, July 15-19, 2024, respectively.
 
 ## Cloning the repository
 
